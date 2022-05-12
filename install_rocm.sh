@@ -129,6 +129,8 @@ BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
 #      -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/llvm\
 #      -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR=$DEVICE_LIBS
 # make -j $NCORES install
+## The following is needed otherwise clang complains when executing hipcc
+# ln -s ${ROCM_INSTALL_DIR}/llvm/amdgcn ${ROCM_INSTALL_DIR}/amdgcn
 # cd $BUILD_FOLDER
 
 # # ROCM Runtime
