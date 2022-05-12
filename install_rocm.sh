@@ -9,6 +9,7 @@ GFX_ARCHS="gfx906,gfx908"
 NCORES=8
 ROCM_INSTALL_DIR=/opt/rocm-dev2
 CLEAN_BUILD=0
+SYSTEM_HAS_GPU=0
 START_DIR=`pwd`
 
 
@@ -117,6 +118,7 @@ fi
 
 # LLVM
 DEVICE_LIBS="$BUILD_FOLDER/ROCm-Device-Libs"
+BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
 # cd llvm-project
 # mkdir build 
 # cd build
@@ -129,40 +131,41 @@ DEVICE_LIBS="$BUILD_FOLDER/ROCm-Device-Libs"
 # make -j $NCORES install
 # cd $BUILD_FOLDER
 
-# ROCM Runtime
-apt install -y libelf-dev libc6-dev-i386
-cmake_install ROCR-Runtime "-DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DBITCODE_DIR=$ROCM_INSTALL_DIR/amdgcn/bitcode"
+# # ROCM Runtime
+# apt install -y libelf-dev libc6-dev-i386
+# cmake_install ROCR-Runtime "-DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DBITCODE_DIR=$BITCODE_DIR"
 
-# ROCM cmake
-cmake_install rocm-cmake
+# # ROCM cmake
+# cmake_install rocm-cmake
 
-# opencl
-export ROCM_DIR=$ROCM_INSTALL_DIR
-cmake_install clang-ocl "-DROCM_DIR=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
+# # opencl
+# export ROCM_DIR=$ROCM_INSTALL_DIR
+# cmake_install clang-ocl "-DROCM_DIR=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
 
 
-# ROCm compiler support
-cd ROCm-CompilerSupport/lib/comgr
-run_command mkdir build && cd build
-run_command cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
-run_command make -j $NCORES install
+# # ROCm compiler support
+# cd ROCm-CompilerSupport/lib/comgr
+# run_command mkdir build && cd build
+# run_command cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
+# run_command make -j $NCORES install
 
-# ROCM-smi-lib
-cmake_install rocm_smi_lib
+# # ROCM-smi-lib
+# cmake_install rocm_smi_lib
 
-# ROCM info
-cmake_install rocminfo
+# # ROCM info
+# cmake_install rocminfo
 export OPENCL_DIR=$BUILD_FOLDER/ROCm-OpenCL-Runtime
 export ROCCLR_DIR=$BUILD_FOLDER/ROCclr
 
 
 ## install opencl runtime
-cd $OPENCL_DIR
-run_command mkdir -p /etc/OpenCL/vendors/
-run_command cp config/amdocl64.icd /etc/OpenCL/vendors/
-mkdir build && cd build
-run_command cmake -DCMAKE_BUILD_TYPE=Release -DUSE_COMGR_LIBRARY=ON -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/opencl ..
-run_command make -j$NCORES install
+# cd $OPENCL_DIR
+# run_command mkdir -p /etc/OpenCL/vendors/
+# run_command cp config/amdocl64.icd /etc/OpenCL/vendors/
+# mkdir build
+# cd build
+# run_command cmake -DCMAKE_BUILD_TYPE=Release -DUSE_COMGR_LIBRARY=ON -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/opencl ..
+# run_command make -j$NCORES install
 
 # download roctracer and rocprofiler as they are needed for hip, but do not install them yet
 # rocprofiler
@@ -174,25 +177,39 @@ export TRACER_DIR=$BUILD_FOLDER/roctracer
 COMMON_HIP=$BUILD_FOLDER/HIP
 # Missing file
 #run_command cp $OPENCL_DIR/amdocl/cl_vk_amd.hpp amdocl/ 
-cd $BUILD_FOLDER/hipamd
-mkdir build 
-cd build
-echo "CURRENTDIR = `pwd`"
-export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/bin 
-export HIP_PATH=$ROCM_INSTALL_DIR/hip
-export HSA_PATH=$ROCM_INSTALL_DIR/hsa
-export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
-export HIP_RUNTIME=rocclr
-export HSA_PATH=$ROCM_INSTALL_DIR/hsa
-export CMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
-cmake -DCMAKE_BUILD_TYPE=Release -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH="$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR" -DCMAKE_INSTALL_PREFIX="$ROCM_INSTALL_DIR/hip" -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR -DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS" ..
-run_command make -j $NCORES install
+# if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
+#     cd $ROCM_INSTALL_DIR/bin
+#     mv rocm_agent_enumerator rocm_agent_enumerator_backup
+#     echo """#!/bin/bash
+#     echo gfx908
 
-# ROCTracer and ROCprofiler install
-cmake_install roctracer "-DCMAKE_BUILD_TYPE=Release -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
-cmake_install rocprofiler
+#     """ > rocm_agent_enumerator
+#     chmod 0777 rocm_agent_enumerator
+# fi
+# cd $BUILD_FOLDER/hipamd
+# mkdir build 
+# cd build
+# export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/llvm/bin 
+# export HIP_PATH=$ROCM_INSTALL_DIR/hip
+# export HSA_PATH=$ROCM_INSTALL_DIR/hsa
+# export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
+# export HIP_RUNTIME=rocclr
+# export HSA_PATH=$ROCM_INSTALL_DIR/hsa
+# export CMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
+# cmake -DCMAKE_BUILD_TYPE=Release -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH="$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR" -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX="$ROCM_INSTALL_DIR/hip" -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR -DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS" ..
+# run_command make -j $NCORES install
 
-exit 0
+# if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
+#     cd $ROCM_INSTALL_DIR/bin
+#     mv rocm_agent_enumerator_backup rocm_agent_enumerator
+#     cd $BUILD_FOLDER
+# fi
+
+# # ROCTracer and ROCprofiler install
+# cmake_install roctracer "-DCMAKE_BUILD_TYPE=Release -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
+# cmake_install rocprofiler
+
+
 
 # HIPIFY tools
 cmake_install HIPIFY "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hipify"
