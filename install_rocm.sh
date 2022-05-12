@@ -11,7 +11,7 @@ ROCM_INSTALL_DIR=/opt/rocm-dev2
 CLEAN_BUILD=0
 SYSTEM_HAS_GPU=0
 START_DIR=`pwd`
-
+CMAKE_VERSION=3.23.1
 
 export CMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR:$ROCM_INSTALL_DIR/rocclr:$ROCM_INSTALL_DIR/include/hsa:$CMAKE_PREFIX_PATH
 export CPATH=$ROCM_INSTALL_DIR/rocclr/include/elf:$ROCM_INSTALL_DIR/include/hsa:$CPATH
@@ -79,8 +79,8 @@ export_vars $ROCM_INSTALL_DIR/roctracer
 
 
 # Setting up build process and dependencies
-apt install -y libnuma-dev libudev-dev xxd libdrm-dev libudev-dev libelf-dev libc6-dev-i386 python3-pip sqlite3 curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget libssl-dev
-pip3 install cppheaderparser argparse
+apt install -y gfortran libnuma-dev libudev-dev xxd libdrm-dev libudev-dev libelf-dev libc6-dev-i386 python3-pip sqlite3 curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget libssl-dev libdw-dev python3.8-venv
+pip3 install cppheaderparser argparse virtualenv
 
 BUILD_FOLDER="$START_DIR/build"
 export_vars "$BUILD_FOLDER/build-deps"
@@ -89,9 +89,12 @@ if [ -d "$BUILD_FOLDER" ] && [ $CLEAN_BUILD -eq 1 ]; then
     rm -rf "$BUILD_FOLDER"
 fi
 [ -d "$BUILD_FOLDER" ] || mkdir -p "$BUILD_FOLDER/build-deps/bin"
-# we need a "python" executable
+# we need "python" and "pip" executables
 if [[ `which python` == "" ]]; then
     run_command cd "$BUILD_FOLDER/build-deps/bin"; ln -s `which python3` python;
+fi
+if [[ `which pip` == "" ]]; then
+    run_command cd "$BUILD_FOLDER/build-deps/bin"; ln -s `which pip3` pip;
 fi
 cd $BUILD_FOLDER
 if ! [ -d hipamd ]; then 
@@ -105,9 +108,10 @@ fi
 
 #INSTALL cmake
 # cd $BUILD_FOLDER
-# wget https://github.com/Kitware/CMake/releases/download/v3.21.3/cmake-3.21.3.tar.gz
-# tar -xf cmake-3.21.3.tar.gz
-# cd cmake-3.21.3
+# #pre working version 3.21.3
+# wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz
+# tar -xf cmake-${CMAKE_VERSION}.tar.gz
+# cd cmake-${CMAKE_VERSION}
 # ./configure --prefix=$BUILD_FOLDER/build-deps
 # make -j $NCORES
 # make install
@@ -191,7 +195,8 @@ COMMON_HIP=$BUILD_FOLDER/HIP
 # cd $BUILD_FOLDER/hipamd
 # mkdir build 
 # cd build
-# export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/llvm/bin 
+export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/llvm/bin
+export ROCM_PATH=${ROCM_INSTALL_DIR}
 # export HIP_PATH=$ROCM_INSTALL_DIR/hip
 # export HSA_PATH=$ROCM_INSTALL_DIR/hsa
 # export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
@@ -211,18 +216,30 @@ COMMON_HIP=$BUILD_FOLDER/HIP
 # cmake_install roctracer "-DCMAKE_BUILD_TYPE=Release -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
 # cmake_install rocprofiler
 
+# # HIPIFY tools
+# cmake_install HIPIFY "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hipify"
+
+# #ROCdbgapi
+# cmake_install ROCdbgapi
+
+# #rocr_debug_agent
+# cmake_install rocr_debug_agent "-DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
+
+# #rocm_bandwidth_test
+# cmake_install rocm_bandwidth_test
+
+# cmake_install half
+
+# build rocblas (CURRENTLY DOES NOT WORK https://github.com/ROCmSoftwarePlatform/rocBLAS/issues/1250)
+cd $BUILD_FOLDER/rocBLAS
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$ROCM_INSTALL_DIR/llvm;$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip"\
+	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake \
+	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
+run_command make
+run_command make install
+cd $BUILD_FOLDER
 
 
-# HIPIFY tools
-cmake_install HIPIFY "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hipify"
-
-#ROCdbgapi
-cmake_install ROCdbgapi
-
-
-#rocr_debug_agent
-# apt install -y libdw-dev
-cmake_install rocr_debug_agent "-DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
-
-#rocm_bandwidth_test
-cmake_install rocm_bandwidth_test
+cmake_install hipBLAS
