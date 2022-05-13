@@ -5,7 +5,7 @@
 # Input parameters
 ROCM_VERSION=5.1.0
 ROCM_VERSION_BRANCH=5.1.x
-GFX_ARCHS="gfx906,gfx908"
+GFX_ARCHS="gfx908" # https://llvm.org/docs/AMDGPUUsage.html check this
 NCORES=8
 ROCM_INSTALL_DIR=/opt/rocm-dev2
 CLEAN_BUILD=0
@@ -32,16 +32,24 @@ function export_vars {
 
 function run_command {
 	echo "Running command $@"
-	eval "$@"
+	# All the following mess is due to the ';' present in some parameters. We need to put arguments to cmake into single quotes.
+	declare -i count
+	count=0
+	string_to_eval=""
+	for arg in $@;
+	do
+	if [ $count -eq 0 ]; then
+			string_to_eval="$arg"
+	else
+			string_to_eval="$string_to_eval '$arg'"
+	fi
+	(( count=count+1 ))
+	done
+	eval "$string_to_eval"
 	if [ $? -ne 0 ]; then
 	    echo "Error running a command: $@"
        	exit 1
 	fi	       
-}
-
-
-function log {
-    echo "$1"
 }
 
 
@@ -63,7 +71,8 @@ function cmake_install {
     fi
 	mkdir build 
 	cd build
-	run_command cmake $CMAKE_FLAGS $SOURCE_DIR
+	echo "Current dir: `pwd`"
+	run_command cmake "$CMAKE_FLAGS" $SOURCE_DIR
 	run_command make -j $NCORES install
     cd $BUILD_FOLDER
 }
@@ -85,7 +94,7 @@ pip3 install cppheaderparser argparse virtualenv
 BUILD_FOLDER="$START_DIR/build"
 export_vars "$BUILD_FOLDER/build-deps"
 if [ -d "$BUILD_FOLDER" ] && [ $CLEAN_BUILD -eq 1 ]; then
-    log "Cleaning up previous build."
+    echo "Cleaning up previous build."
     rm -rf "$BUILD_FOLDER"
 fi
 [ -d "$BUILD_FOLDER" ] || mkdir -p "$BUILD_FOLDER/build-deps/bin"
@@ -101,14 +110,13 @@ if ! [ -d hipamd ]; then
     # Dowload all the ROCM repositories with the repo tool. First, we need the tool
     run_command curl https://storage.googleapis.com/git-repo-downloads/repo -o "$BUILD_FOLDER/bin/repo"
     run_command chmod a+x "$BUILD_FOLDER/bin/repo"
-    log "Downloading ROCM repositories"
+    echo "Downloading ROCM repositories"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b roc-${ROCM_VERSION_BRANCH}
     run_command repo sync
 fi
 
-#INSTALL cmake
+# Always use the latest cmake. ROCMm depends heavily on latest CMake features, including HIP support.
 # cd $BUILD_FOLDER
-# #pre working version 3.21.3
 # wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz
 # tar -xf cmake-${CMAKE_VERSION}.tar.gz
 # cd cmake-${CMAKE_VERSION}
@@ -231,15 +239,26 @@ export ROCM_PATH=${ROCM_INSTALL_DIR}
 # cmake_install half
 
 # build rocblas (CURRENTLY DOES NOT WORK https://github.com/ROCmSoftwarePlatform/rocBLAS/issues/1250)
-cd $BUILD_FOLDER/rocBLAS
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$ROCM_INSTALL_DIR/llvm;$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip"\
-	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake \
-	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
-run_command make
-run_command make install
-cd $BUILD_FOLDER
+# cd $BUILD_FOLDER/rocBLAS
+# mkdir build
+# cd build
+# cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$ROCM_INSTALL_DIR/llvm;$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip"\
+# 	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake -DTensile_CODE_OBJECT_VERSION=V3 \
+# 	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DAMDGPU_TARGETS=$GFX_ARCHS ..
+# run_command make -j $NCORES
+# run_command make install
+# cd $BUILD_FOLDER
+cmake_install rocBLAS "-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR/llvm"';'"$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip\
+  	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake -DTensile_CODE_OBJECT_VERSION=V3 \
+ 	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DAMDGPU_TARGETS=$GFX_ARCHS"
+# rocRAND
+cmake_install rocRAND "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
 
+# rocSOLVER
+cmake_install rocSOLVER "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
 
-cmake_install hipBLAS
+cmake_install rocSPARSE "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+cmake_install rocALUTION "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake"
+
+cmake_install hipBLAS  
