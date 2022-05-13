@@ -12,6 +12,7 @@ CLEAN_BUILD=0
 SYSTEM_HAS_GPU=0
 START_DIR=`pwd`
 CMAKE_VERSION=3.23.1
+BUILD_TYPE=Release
 
 export CMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR:$ROCM_INSTALL_DIR/rocclr:$ROCM_INSTALL_DIR/include/hsa:$CMAKE_PREFIX_PATH
 export CPATH=$ROCM_INSTALL_DIR/rocclr/include/elf:$ROCM_INSTALL_DIR/include/hsa:$CPATH
@@ -57,10 +58,10 @@ function run_command {
 function cmake_install {
 	cd $BUILD_FOLDER
 	PACKAGE_NAME="$1"
-	CMAKE_FLAGS="$2"
+	CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
 	SOURCE_DIR=".."
-    if [ $# -eq 1 ]; then
-		CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
+    if [ $# -eq 2 ]; then
+		CMAKE_FLAGS="$2"
 	fi
 	echo "Installing $PACKAGE_NAME .."
 	cd $PACKAGE_NAME
@@ -71,8 +72,7 @@ function cmake_install {
     fi
 	mkdir build 
 	cd build
-	echo "Current dir: `pwd`"
-	run_command cmake "$CMAKE_FLAGS" $SOURCE_DIR
+	run_command cmake "$CMAKE_FLAGS" "$SOURCE_DIR"
 	run_command make -j $NCORES install
     cd $BUILD_FOLDER
 }
@@ -107,12 +107,15 @@ if [[ `which pip` == "" ]]; then
 fi
 cd $BUILD_FOLDER
 if ! [ -d hipamd ]; then 
-    # Dowload all the ROCM repositories with the repo tool. First, we need the tool
+	# Dowload all the ROCM repositories with the repo tool. First, we need the tool
     run_command curl https://storage.googleapis.com/git-repo-downloads/repo -o "$BUILD_FOLDER/bin/repo"
     run_command chmod a+x "$BUILD_FOLDER/bin/repo"
     echo "Downloading ROCM repositories"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b roc-${ROCM_VERSION_BRANCH}
     run_command repo sync
+	# Needed for rocBLAS
+	run_command git clone -b cpp-3.0.1 https://github.com/msgpack/msgpack-c.git
+    
 fi
 
 # Always use the latest cmake. ROCMm depends heavily on latest CMake features, including HIP support.
@@ -131,36 +134,31 @@ fi
 # LLVM
 DEVICE_LIBS="$BUILD_FOLDER/ROCm-Device-Libs"
 BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
-# cd llvm-project
-# mkdir build 
-# cd build
-# cmake ../llvm -DCMAKE_BUILD_TYPE=Release \
-#      -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt" \
-#      -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
-#      -DLLVM_EXTERNAL_PROJECTS="device-libs" \
+
+# cmake_install llvm-project "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+#      -DLLVM_ENABLE_PROJECTS=llvm;clang;lld;compiler-rt \
+#      -DLLVM_TARGETS_TO_BUILD=AMDGPU;X86\
+#      -DLLVM_EXTERNAL_PROJECTS=device-libs \
 #      -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/llvm\
-#      -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR=$DEVICE_LIBS
-# make -j $NCORES install
-## The following is needed otherwise clang complains when executing hipcc
+#      -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR=$DEVICE_LIBS"
+
+# # The following is needed otherwise clang complains when executing hipcc
 # ln -s ${ROCM_INSTALL_DIR}/llvm/amdgcn ${ROCM_INSTALL_DIR}/amdgcn
-# cd $BUILD_FOLDER
 
 # # ROCM Runtime
-# apt install -y libelf-dev libc6-dev-i386
-# cmake_install ROCR-Runtime "-DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DBITCODE_DIR=$BITCODE_DIR"
+# cmake_install ROCR-Runtime "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DBITCODE_DIR=$BITCODE_DIR"
 
 # # ROCM cmake
 # cmake_install rocm-cmake
 
 # # opencl
-# export ROCM_DIR=$ROCM_INSTALL_DIR
-# cmake_install clang-ocl "-DROCM_DIR=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
+# cmake_install clang-ocl "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DROCM_DIR=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
 
 
 # # ROCm compiler support
 # cd ROCm-CompilerSupport/lib/comgr
 # run_command mkdir build && cd build
-# run_command cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
+# run_command cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR ..
 # run_command make -j $NCORES install
 
 # # ROCM-smi-lib
@@ -168,29 +166,16 @@ BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
 
 # # ROCM info
 # cmake_install rocminfo
-export OPENCL_DIR=$BUILD_FOLDER/ROCm-OpenCL-Runtime
-export ROCCLR_DIR=$BUILD_FOLDER/ROCclr
 
-
-## install opencl runtime
-# cd $OPENCL_DIR
+# # install opencl runtime
+# export OPENCL_DIR=$BUILD_FOLDER/ROCm-OpenCL-Runtime
 # run_command mkdir -p /etc/OpenCL/vendors/
-# run_command cp config/amdocl64.icd /etc/OpenCL/vendors/
-# mkdir build
-# cd build
-# run_command cmake -DCMAKE_BUILD_TYPE=Release -DUSE_COMGR_LIBRARY=ON -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/opencl ..
-# run_command make -j$NCORES install
+# run_command cp ${OPENCL_DIR}/config/amdocl64.icd /etc/OpenCL/vendors/
+# cmake_install ROCm-OpenCL-Runtime "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUSE_COMGR_LIBRARY=ON -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/opencl"
 
-# download roctracer and rocprofiler as they are needed for hip, but do not install them yet
-# rocprofiler
-export PROFILER_DIR=$BUILD_FOLDER/rocprofiler
-# roctracer
-export TRACER_DIR=$BUILD_FOLDER/roctracer
 
-# HIP
-COMMON_HIP=$BUILD_FOLDER/HIP
-# Missing file
-#run_command cp $OPENCL_DIR/amdocl/cl_vk_amd.hpp amdocl/ 
+# # HIP
+# COMMON_HIP=$BUILD_FOLDER/HIP
 # if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
 #     cd $ROCM_INSTALL_DIR/bin
 #     mv rocm_agent_enumerator rocm_agent_enumerator_backup
@@ -200,20 +185,20 @@ COMMON_HIP=$BUILD_FOLDER/HIP
 #     """ > rocm_agent_enumerator
 #     chmod 0777 rocm_agent_enumerator
 # fi
-# cd $BUILD_FOLDER/hipamd
-# mkdir build 
-# cd build
+
 export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/llvm/bin
 export ROCM_PATH=${ROCM_INSTALL_DIR}
-# export HIP_PATH=$ROCM_INSTALL_DIR/hip
-# export HSA_PATH=$ROCM_INSTALL_DIR/hsa
-# export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
-# export HIP_RUNTIME=rocclr
-# export HSA_PATH=$ROCM_INSTALL_DIR/hsa
-# export CMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
-# cmake -DCMAKE_BUILD_TYPE=Release -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH="$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR" -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX="$ROCM_INSTALL_DIR/hip" -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR -DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS" ..
-# run_command make -j $NCORES install
+export ROCCLR_DIR=$BUILD_FOLDER/ROCclr
+export HIP_PATH=$ROCM_INSTALL_DIR/hip
+export HSA_PATH=$ROCM_INSTALL_DIR/hsa
+export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
+export HIP_RUNTIME=rocclr
 
+# cmake_install hipamd "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH=$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR\
+# 	-DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hip -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR \
+# 	-DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
+
+# # revert back previous hack
 # if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
 #     cd $ROCM_INSTALL_DIR/bin
 #     mv rocm_agent_enumerator_backup rocm_agent_enumerator
@@ -221,44 +206,29 @@ export ROCM_PATH=${ROCM_INSTALL_DIR}
 # fi
 
 # # ROCTracer and ROCprofiler install
-# cmake_install roctracer "-DCMAKE_BUILD_TYPE=Release -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
+# cmake_install roctracer "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR"
 # cmake_install rocprofiler
-
-# # HIPIFY tools
-# cmake_install HIPIFY "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hipify"
-
-# #ROCdbgapi
+# cmake_install HIPIFY "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hipify"
 # cmake_install ROCdbgapi
-
-# #rocr_debug_agent
-# cmake_install rocr_debug_agent "-DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
-
-# #rocm_bandwidth_test
+# cmake_install rocr_debug_agent "-DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+# 	-DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
 # cmake_install rocm_bandwidth_test
-
 # cmake_install half
 
 # build rocblas (CURRENTLY DOES NOT WORK https://github.com/ROCmSoftwarePlatform/rocBLAS/issues/1250)
-# cd $BUILD_FOLDER/rocBLAS
-# mkdir build
-# cd build
-# cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$ROCM_INSTALL_DIR/llvm;$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip"\
-# 	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake -DTensile_CODE_OBJECT_VERSION=V3 \
-# 	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DAMDGPU_TARGETS=$GFX_ARCHS ..
-# run_command make -j $NCORES
-# run_command make install
-# cd $BUILD_FOLDER
-cmake_install rocBLAS "-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR/llvm"';'"$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip\
+# cmake_install msgpack-c "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DMSGPACK_BUILD_TESTS=OFF -DMSGPACK_BUILD_EXAMPLES=OFF"
+
+cmake_install rocBLAS "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR/llvm;$ROCM_INSTALL_DIR;$ROCM_INSTALL_DIR/hip\
   	-DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake -DTensile_CODE_OBJECT_VERSION=V3 \
- 	-DTENSILE_USE_MSGPACK=OFF -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DAMDGPU_TARGETS=$GFX_ARCHS"
+ 	-DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DAMDGPU_TARGETS=$GFX_ARCHS"
 # rocRAND
-cmake_install rocRAND "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
+cmake_install rocRAND "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
 
 # rocSOLVER
-cmake_install rocSOLVER "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
+cmake_install rocSOLVER "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
 
-cmake_install rocSPARSE "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
+cmake_install rocSPARSE "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS"
 
-cmake_install rocALUTION "-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake"
+cmake_install rocALUTION "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake"
 
 cmake_install hipBLAS  
