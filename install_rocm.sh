@@ -53,6 +53,36 @@ function run_command {
     fi           
 }
 
+function apply_hipamd_patch {
+    cd $BUILD_FOLDER/hipamd
+    patch -p1 << 'EOF'
+--- a/CMakeLists.txt	2022-05-01 23:39:05.857043471 +0000
++++ b/CMakeLists.txt	2022-05-01 23:40:39.727778449 +0000
+@@ -144,6 +144,9 @@
+     set(HIP_PACKAGING_VERSION_PATCH ${HIP_VERSION_PATCH}-${HIP_VERSION_GITHASH})
+   endif()
+ else()
++  set(HIP_VERSION_BUILD_ID 0)
++  set(HIP_VERSION_BUILD_NAME "")
++  set(HIP_VERSION_PATCH 1)
+   # FIXME: Some parts depend on this being set.
+   set(HIP_PACKAGING_VERSION_PATCH "0")
+ endif()
+@@ -187,8 +190,10 @@
+ set (HIP_LIB_VERSION_MINOR ${HIP_VERSION_MINOR})
+ if (${ROCM_PATCH_VERSION} )
+    set (HIP_LIB_VERSION_PATCH ${ROCM_PATCH_VERSION})
+-else ()
++elseif (DEFINED HIP_VERSION_GITHASH)
+    set (HIP_LIB_VERSION_PATCH ${HIP_VERSION_PATCH}-${HIP_VERSION_GITHASH})
++else ()
++   set (HIP_LIB_VERSION_PATCH ${HIP_VERSION_PATCH})
+ endif ()
+ set (HIP_LIB_VERSION_STRING "${HIP_LIB_VERSION_MAJOR}.${HIP_LIB_VERSION_MINOR}.${HIP_LIB_VERSION_PATCH}")
+ if (DEFINED ENV{ROCM_RPATH})
+EOF
+    cd $BUILD_FOLDER
+}
 
 
 function cmake_install {
@@ -85,7 +115,7 @@ export_vars $ROCM_INSTALL_DIR/opencl
 export_vars $ROCM_INSTALL_DIR/llvm
 export_vars $ROCM_INSTALL_DIR/hip
 export_vars $ROCM_INSTALL_DIR/roctracer
-
+export_vars $ROCM_INSTALL_DIR/boost
 
 # Setting up build process and dependencies
 apt install -y gfortran libnuma-dev libudev-dev xxd libdrm-dev libudev-dev libelf-dev libc6-dev-i386 python3-pip sqlite3 curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget libssl-dev libdw-dev python3.8-venv
@@ -193,7 +223,7 @@ export HIP_PATH=$ROCM_INSTALL_DIR/hip
 export HSA_PATH=$ROCM_INSTALL_DIR/hsa
 export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
 export HIP_RUNTIME=rocclr
-
+# apply_hipamd_patch # see https://github.com/ROCmSoftwarePlatform/rocALUTION/issues/144
 # cmake_install hipamd "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH=$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR\
 #     -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hip -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR \
 #     -DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
@@ -235,9 +265,59 @@ export HIP_RUNTIME=rocclr
 
 # cmake_install rocSPARSE "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF"
 
-# TODO fix this
+# DOES NOT COMPILE -  https://github.com/ROCmSoftwarePlatform/rocALUTION/issues/144
 # cmake_install rocALUTION "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake;$ROCM_INSTALL_DIR" #  remove this last option
 
 
 # cmake_install hipBLAS  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
 
+# cmake_install hipSOLVER  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+# cmake_install hipSPARSE  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+# cmake_install hipCUB  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+# DOES NOT COMPILE - https://github.com/ROCmSoftwarePlatform/rocFFT/issues/363
+# cmake_install rocFFT  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+# cmake_install hipFFT  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/hip/cmake;$ROCM_INSTALL_DIR"
+
+# cmake_install rocThrust  "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+
+# cmake_install hipfort
+
+# cmake_install rccl "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR  -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS"
+
+#FIXTHIS WARNING: #pragma message: cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+# cmake_install MIOpenGEMM
+cd $BUILD_FOLDER
+# run_command wget https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0_rc2.tar.gz
+# run_command tar -xf boost_1_72_0_rc2.tar.gz
+# run_command cd boost_1_72_0
+# OLD_CPLUS_VAR=$CPLUS_INCLUDE_PATH
+# export CPLUS_INCLUDE_PATH=""
+# ( unset CPLUS_INCLUDE_PATH; unset CPATH; ./bootstrap.sh --prefix=$ROCM_INSTALL_DIR/boost )
+# export CPLUS_INCLUDE_PATH=$OLD_CPLUS_VAR
+# run_command ./b2 headers
+# run_command ./b2 -j$NCORES install toolset=gcc --with=all --prefix=$ROCM_INSTALL_DIR/boost
+
+# the following requires boost TODO: compile tensile separately
+# apt-get -y install libomp-dev
+# export LD_LIBRARY_PATH:/lib/llvm-10/lib:$LD_LIBRARY_PATH
+# export LIBRARY_PATH:/lib/llvm-10/lib:$LIBRARY_PATH
+# cd $BUILD_FOLDER/Tensile/Tensile/Source
+# mkdir build
+# cd build
+# cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DTensile_CODE_OBJECT_VERSION=V3 -DCMAKE_CXX_COMPILER=hipcc -DTENSILE_GPU_ARCHS=$GFX_ARCHS ..
+# make -j $NCORES
+
+
+# cmake_install MIOpenTensile "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DTensile_CODE_OBJECT_VERSION=V3   -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=hipcc"
+
+cd $BUILD_FOLDER
+# run_command wget https://www.sqlite.org/snapshot/sqlite-snapshot-202205121156.tar.gz
+# run_command tar -xf sqlite-snapshot-202205121156.tar.gz
+# run_command cd sqlite-snapshot-202205121156
+# run_command ./configure --prefix=$ROCM_INSTALL_DIR
+# run_command make -j $NCORES install
