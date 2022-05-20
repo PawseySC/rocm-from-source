@@ -115,6 +115,9 @@ export_vars $ROCM_INSTALL_DIR/opencl
 export_vars $ROCM_INSTALL_DIR/llvm
 export_vars $ROCM_INSTALL_DIR/hip
 export_vars $ROCM_INSTALL_DIR/roctracer
+export_vars $ROCM_INSTALL_DIR/rocrand
+export_vars $ROCM_INSTALL_DIR/rocblas
+export_vars $ROCM_INSTALL_DIR/rocsparse
 export_vars $ROCM_INSTALL_DIR/boost
 
 # Setting up build process and dependencies
@@ -198,14 +201,14 @@ BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
 # cmake_install rocminfo
 
 # # install opencl runtime
-# export OPENCL_DIR=$BUILD_FOLDER/ROCm-OpenCL-Runtime
+export OPENCL_DIR=$BUILD_FOLDER/ROCm-OpenCL-Runtime
 # run_command mkdir -p /etc/OpenCL/vendors/
 # run_command cp ${OPENCL_DIR}/config/amdocl64.icd /etc/OpenCL/vendors/
 # cmake_install ROCm-OpenCL-Runtime "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUSE_COMGR_LIBRARY=ON -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/opencl"
 
 
 # # HIP
-# COMMON_HIP=$BUILD_FOLDER/HIP
+COMMON_HIP=$BUILD_FOLDER/HIP
 # if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
 #     cd $ROCM_INSTALL_DIR/bin
 #     mv rocm_agent_enumerator rocm_agent_enumerator_backup
@@ -219,13 +222,13 @@ BITCODE_DIR=$ROCM_INSTALL_DIR/llvm/amdgcn/bitcode
 export HIP_CLANG_PATH=$ROCM_INSTALL_DIR/llvm/bin
 export ROCM_PATH=${ROCM_INSTALL_DIR}
 export ROCCLR_DIR=$BUILD_FOLDER/ROCclr
-export HIP_PATH=$ROCM_INSTALL_DIR/hip
+export HIP_PATH=$ROCM_INSTALL_DIR/hip2
 export HSA_PATH=$ROCM_INSTALL_DIR/hsa
 export HIP_ROCCLR_HOME=$ROCM_INSTALL_DIR/hip/rocclr
 export HIP_RUNTIME=rocclr
 # apply_hipamd_patch # see https://github.com/ROCmSoftwarePlatform/rocALUTION/issues/144
 # cmake_install hipamd "-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_PREFIX_PATH=$BUILD_FOLDER/rocclr;$ROCM_INSTALL_DIR\
-#     -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hip -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR \
+#     -DROCM_PATH=$ROCM_INSTALL_DIR -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/hip2 -DHSA_PATH=$ROCM_INSTALL_DIR/hsa -DROCCLR_PATH=$ROCCLR_DIR \
 #     -DAMD_OPENCL_PATH=$OPENCL_DIR  -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS"
 
 # # revert back previous hack
@@ -321,3 +324,28 @@ cd $BUILD_FOLDER
 # run_command cd sqlite-snapshot-202205121156
 # run_command ./configure --prefix=$ROCM_INSTALL_DIR
 # run_command make -j $NCORES install
+# git clone -b release/rocm-5.1 https://github.com/ROCmSoftwarePlatform/llvm-project-mlir.git
+# cmake_install llvm-project-mlir "-DCMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR/mlir -DAMDGPU_TARGETS=$GFX_ARCHS"
+# investigate  MIOPEN_USE_MIOPENGEMM            ON                                                                                                                                           
+# MIOPEN_USE_MIOPENTENSILE  
+# cmake_install MIOpen "-DCMAKE_PREFIX_PATH=$ROCM_INSTALL_DIR -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=$ROCM_INSTALL_DIR -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=clang++ -DMIOPEN_USE_MIOPENGEMM=On"
+
+# IS RCP meant to be part of ROCm??
+
+# cd $BUILD_FOLDER/atmi/src
+# mkdir build
+# cd build
+# export GFXLIST="${GFX_ARCHS}" # e.g.: gfx900 is for AMD Vega GPUs
+# # ensure you have cmake (version >= 2.8)
+# cmake \
+#     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+#     -DCMAKE_BUILD_TYPE=Release \
+#     -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm \
+#     -DDEVICE_LIB_DIR=${DEVICE_LIBS}  \
+#     -DATMI_DEVICE_RUNTIME=ON \
+#     -DATMI_HSA_INTEROP=ON    \
+#     -DROCM_DIR=${ROCM_INSTALL_DIR}/hsa\
+#     ..
+# # make all components (Host runtime and device runtime)
+# make -j $NCORES
+# make install
