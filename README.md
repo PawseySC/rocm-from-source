@@ -4,26 +4,24 @@ A set of scripts that attempt to install the ROCm framework from source, brought
 
 **NOTE:** this is just an internal project for now, do not share outside as it is highly unstable. For any information, contact Cristian.
 
-## Post installation instruction
+## Instructions
 
-The `ROCM_PATH` environment variable must be set to the ROCm installation directory. We can do this within the module.
+Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scripts to install ROCm. At the top of each script
+there are a few variables one can set to personalise the installation.
 
-More info
+## TODO
+
+1. Check that rocFFT now works
+2. Try to build rocALUTION
+3. Build Tensile by itself, then use it as dependency in rocblas and miopen
+4. Try to figure out how to better install dependencies.
+5. What about the kernel driver?
+
+## Known issues
+
+1. rocALUTION does not compile (https://github.com/ROCmSoftwarePlatform/rocALUTION/issues/144).
+2. rocFFT (hence hipFFT) does not compile (https://github.com/ROCmSoftwarePlatform/rocFFT/issues/363).
+
+## References
 
 1. https://github.com/RadeonOpenCompute/ROCm_Documentation/blob/master//Installation_Guide/Using-CMake-with-AMD-ROCm.rst 
-
-## Error notes
-
-We need  to execute`apt install python3.8-venv` otherwise we get this. Can we have a workaround?
-
-```
-Failing command: ['/home/ubuntu/rocm-from-source/build/rocBLAS/build/virtualenv/bin/python3', '-Im', 'ensurepip', '--upgrade', '--default-pip']
-
-/home/ubuntu/rocm-from-source/build/rocBLAS/build/virtualenv/bin/python3 -m pip install git+https://github.com/ROCmSoftwarePlatform/Tensile.git@ea38f8661281a37cd81c96cc07868e3f07d2c4da
-/home/ubuntu/rocm-from-source/build/rocBLAS/build/virtualenv/bin/python3: No module named pip
-CMake Error at cmake/virtualenv.cmake:34 (message):
-  1
-Call Stack (most recent call first):
-  CMakeLists.txt:284 (virtualenv_install)
-
-```
