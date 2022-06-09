@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Author: Cristian Di Pietrantonio
 
@@ -7,6 +7,10 @@
 #
 # Modify the following variables to customise the installation.
 # ============================================================================================================
+
+# TODO: on every compute node
+# run_command mkdir -p /etc/OpenCL/vendors/
+# run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
 # which branch of the ROCM repo to check out.
 ROCM_VERSION=5.1.3
@@ -31,16 +35,6 @@ BUILD_TYPE=Release
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-
-# ============================================================================================================
-#                                                 TODO
-# ============================================================================================================
-
-# 1. Check that rocFFT now works
-# 2. Try to build rocALUTION
-# 3. Build Tensile by itself, then use it as dependency in rocblas and miopen
-# 4. Try to figure out how to better install dependencies.
-# 5. What about the kernel driver?
 
 # ============================================================================================================
 #                                           HELPER FUNCTIONS

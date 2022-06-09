@@ -50,8 +50,9 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     run_command wget https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
     run_command tar -xf bzip2-1.0.8.tar.gz
     run_command git clone git://sourceware.org/git/elfutils.git
+    run_command wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz
+    run_command tar -xf gmp-6.2.1.tar.xz
 fi
-
 
 
 # ============================================================================================================
@@ -83,9 +84,12 @@ run_command ./b2 -j$NCORES cxxflags=-fPIC cflags=-fPIC install toolset=gcc --wit
 
 run_command cd ${BUILD_FOLDER}/elfutils
 run_command autoreconf -i -f
-run_command ./configure --enable-maintainer-mode --disable-debuginfod --prefix=$ROCM_INSTALL_DIR
+run_command ./configure --enable-maintainer-mode --disable-libdebuginfod --disable-debuginfod --prefix="${ROCM_INSTALL_DIR}"
 run_command make -j $NCORES install
-
+run_command cd ${BUILD_FOLDER}/gmp-6.2.1
+run_command ./configure --prefix=${ROCM_INSTALL_DIR}
+run_command make -j $NCORES
+run_command make install
 
 # ============================================================================================================
 #                                       BUILD ROCM PACKAGES
@@ -106,7 +110,7 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
      -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"
 
 # The following is needed otherwise clang complains when executing hipcc
-ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
+run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
 
 cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
     -DBITCODE_DIR="$BITCODE_DIR"
@@ -120,11 +124,7 @@ cmake_install rocm_smi_lib
 cmake_install rocminfo
 
 # install opencl runtime
-# was OPENCL_DIR
 ROCM_OPENCL_RUNTIME_SRC="${BUILD_FOLDER}/ROCm-OpenCL-Runtime"
-# TODO: ask ashley about this
-run_command mkdir -p /etc/OpenCL/vendors/
-run_command cp "${ROCM_OPENCL_RUNTIME_SRC}/config/amdocl64.icd" /etc/OpenCL/vendors/
 cmake_install ROCm-OpenCL-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DUSE_COMGR_LIBRARY=ON \
     -DROCM_PATH="${ROCM_INSTALL_DIR}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/opencl"
 
@@ -161,6 +161,18 @@ cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${R
 cmake_install ROCdbgapi
 cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
+
+# ROCgdb is a bit different
+run_command cd "${BUILD_FOLDER}/ROCgdb"
+[ -d build ] || mkdir build
+cd build
+run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
+  --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
+  --disable-ld --disable-gas --disable-gdbserver --disable-sim \
+  --disable-gdbtk --disable-shared --with-expat --with-system-zlib \
+  --without-guile --with-lzma --with-python=python3 --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
+run_command make -j $NCORES
+run_command make -j $NCORES install
 
 cmake_install rocm_bandwidth_test
 cmake_install half
@@ -244,13 +256,10 @@ cmake_install llvm-project-mlir -DCMAKE_PREFIX_PATH=${ROCM_INSTALL_DIR} -DCMAKE_
 
 # TODO investigate  MIOPEN_USE_MIOPENGEMM=ON and MIOPEN_USE_MIOPENTENSILE
 
-
 cmake_install MIOpen -DCMAKE_PREFIX_PATH=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=clang++\
     -DMIOPEN_USE_MIOPENGEMM=ON
 
-
-# e.g.: gfx900 is for AMD Vega GPUs
 cmake_install atmi -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DLLVM_DIR="${ROCM_INSTALL_DIR}/llvm" -DDEVICE_LIB_DIR=${DEVICE_LIBS} -DATMI_DEVICE_RUNTIME=ON \
     -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa"

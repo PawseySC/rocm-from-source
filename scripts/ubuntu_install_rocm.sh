@@ -37,12 +37,13 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 #                                  DEPENDENCIES FROM PACKET MANAGERS
 # ============================================================================================================
 
-apt install -y gfortran libnuma-dev libudev-dev xxd libdrm-dev libudev-dev libelf-dev libc6-dev-i386 \
+run_command apt install -y gfortran libnuma-dev libudev-dev xxd libdrm-dev libudev-dev libelf-dev libc6-dev-i386 \
     python3-pip curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget \
-    libssl-dev python3.8-venv libomp-dev
-pip3 install cppheaderparser argparse virtualenv
+    libssl-dev python3.8-venv libomp-dev autoconf autopoint flex bison texinfo
+run_command pip3 install cppheaderparser argparse virtualenv
 
-
+run_command mkdir -p /etc/OpenCL/vendors/
+run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
 # ============================================================================================================
 #                                              INSTALL

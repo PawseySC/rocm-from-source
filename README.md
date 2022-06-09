@@ -9,6 +9,13 @@ A set of scripts that attempt to install the ROCm framework from source, brought
 Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scripts to install ROCm. At the top of each script
 there are a few variables one can set to personalise the installation.
 
+To use OpenCL, the following command must be executed on every compute node:
+
+```
+mkdir -p /etc/OpenCL/vendors/
+echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
+```
+
 ## TODO
 
 1. Check that rocFFT now works
