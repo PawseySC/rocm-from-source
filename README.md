@@ -23,6 +23,7 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 3. Build Tensile by itself, then use it as dependency in rocblas and miopen
 4. Try to figure out how to better install dependencies.
 5. What about the kernel driver?
+6. How to enable/handle opencl, how does it fit in ROCm?
 
 ## Known issues
 
