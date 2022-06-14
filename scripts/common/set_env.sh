@@ -1,4 +1,5 @@
 # Needed at build time and runtime
+LIBRARY_PATH=/usr/lib
 export_vars "${ROCM_INSTALL_DIR}"
 export_vars "${ROCM_INSTALL_DIR}/rocclr"
 export_vars "${ROCM_INSTALL_DIR}/opencl"

@@ -19,13 +19,13 @@ GFX_ARCHS="gfx908" # https://llvm.org/docs/AMDGPUUsage.html check this
 # number of cores to be used to build software
 NCORES=128
 # installation directory
-export ROCM_INSTALL_DIR=$MYGROUP/mulan-stuff/rocm-dev2
+export ROCM_INSTALL_DIR=$MYSOFTWARE/mulan-stuff/rocm-dev2
 MODULEFILE_DIR="${ROCM_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 # remove build folder, if exists?
 CLEAN_BUILD=0
 # if the system does not have a gpu, the script has to do some hacks.
-SYSTEM_HAS_GPU=1
+SYSTEM_HAS_GPU=0
 BUILD_FOLDER="`pwd`/build2"
 # always pick the latest version please.
 CMAKE_VERSION=3.23.1
@@ -46,12 +46,13 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 
 # ============================================================================================================
-#                                  DEPENDENCIES FROM PACKET MANAGERS
+#                                             DEPENDENCIES
 # ============================================================================================================
 
 
-module unload PrgEnv-cray
+# module unload PrgEnv-gnu
 module load gcc/10.3.0
+module load cray-python cray-dsmml/0.2.2
 
 # ============================================================================================================
 #                                        ENVIRONMENT VARIABLES
@@ -62,8 +63,8 @@ module load gcc/10.3.0
 PYTHON_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/python3
 export_vars $PYTHON_DIR
 
-export PYTHONPATH=$PYTHON_DIR/lib/python3.8/site-packages:$PYTHONPATH
-export PYTHONPATH=$BUILD_FOLDER/build-deps/pypackages/lib/python3.8/site-packages:$PYTHONPATH
+export PYTHONPATH=$PYTHON_DIR/lib/python3.9/site-packages:$PYTHONPATH
+export PYTHONPATH=$BUILD_FOLDER/build-deps/pypackages/lib/python3.9/site-packages:$PYTHONPATH
 pip3 install --prefix=$BUILD_FOLDER/build-deps/pypackages cppheaderparser argparse virtualenv wheel
 export PATH=$BUILD_FOLDER/build-deps/pypackages/bin:$PATH
 
