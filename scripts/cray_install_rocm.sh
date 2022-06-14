@@ -19,7 +19,7 @@ GFX_ARCHS="gfx908" # https://llvm.org/docs/AMDGPUUsage.html check this
 # number of cores to be used to build software
 NCORES=128
 # installation directory
-export ROCM_INSTALL_DIR=$MYSOFTWARE/mulan-stuff/rocm-dev2
+export ROCM_INSTALL_DIR=$MYSOFTWARE/mulan-stuff/rocm-dev3
 MODULEFILE_DIR="${ROCM_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 # remove build folder, if exists?
@@ -36,23 +36,23 @@ BUILD_TYPE=Release
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
 
-# ============================================================================================================
-#                                           HELPER FUNCTIONS
-# ============================================================================================================
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
 
 # include helper functions
-SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 . "${SCRIPT_DIR}/common/utils.sh"
-
 
 # ============================================================================================================
 #                                             DEPENDENCIES
 # ============================================================================================================
 
-
-# module unload PrgEnv-gnu
 module load gcc/10.3.0
 module load cray-python cray-dsmml/0.2.2
+
+. "${SCRIPT_DIR}/common/install_build_deps.sh"
+. "${SCRIPT_DIR}/common/install_rocm_deps.sh"
+. "${SCRIPT_DIR}/common/install_x11.sh"
+
 
 # ============================================================================================================
 #                                        ENVIRONMENT VARIABLES
@@ -60,13 +60,12 @@ module load cray-python cray-dsmml/0.2.2
 
 . "${SCRIPT_DIR}/common/set_env.sh"
 
-PYTHON_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/python3
-export_vars $PYTHON_DIR
 
-export PYTHONPATH=$PYTHON_DIR/lib/python3.9/site-packages:$PYTHONPATH
-export PYTHONPATH=$BUILD_FOLDER/build-deps/pypackages/lib/python3.9/site-packages:$PYTHONPATH
-pip3 install --prefix=$BUILD_FOLDER/build-deps/pypackages cppheaderparser argparse virtualenv wheel
-export PATH=$BUILD_FOLDER/build-deps/pypackages/bin:$PATH
+
+if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
+    echo "Cleaning up previous build."
+    run_command rm -rf "${BUILD_FOLDER}"
+fi
 
 
 . "${SCRIPT_DIR}/common/install_rocm.sh"
