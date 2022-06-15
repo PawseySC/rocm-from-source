@@ -8,21 +8,12 @@
 # Takes as a argument an absolute path to a directory and adds the include, lib, bin, etc.., 
 # directories within it to the relevant build and runtime linux environment variables.
 export_vars () {
-    if [ "$LIBRARY_PATH" = "" ]; then
-        LIBRARY_PATH=/usr/lib
-    fi
-    if [ "$ACLOCAL_PATH" = "" ]; then
-        ACLOCAL_PATH=/share/aclocal
-    fi
-    if [ "$PKG_CONFIG_PATH" = "" ]; then
-        PKG_CONFIG_PATH=/usr/lib/pkgconfig
-    fi
-    export LD_LIBRARY_PATH=$1/lib:$1/lib64:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=$1/lib:$1/lib64:$LIBRARY_PATH
-    export PATH=$1/bin:$PATH
-    export CPATH=$1/include:$1/inc:$CPATH
-    export ACLOCAL_PATH=$1/share/aclocal:$ACLOCAL_PATH
-    export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:$PKG_CONFIG_PATH
+    export LD_LIBRARY_PATH=$1/lib:$1/lib64:${LD_LIBRARY_PATH%:}
+    export LIBRARY_PATH=$1/lib:$1/lib64:${LIBRARY_PATH%:}
+    export PATH=$1/bin:${PATH%:}
+    export CPATH=$1/include:$1/inc:${CPATH%:}
+    export ACLOCAL_PATH=$1/share/aclocal:${ACLOCAL_PATH%:}
+    export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
 }
 
 

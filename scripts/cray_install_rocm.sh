@@ -31,11 +31,11 @@ GFX_ARCHS="gfx908"
 
 # Locations for ROCm binaries and its dependencies' binaries differ so that you can rebuild only ROCm
 # without having to rebuild dependencies, when it is not needed.
-ROOT_INSTALL_DIR=${MYSOFTWARE}/mulan-stuff/rocm
+ROOT_INSTALL_DIR=/software/projects/pawsey0001/cdipietrantonio/experimental/rocm
 
 # Modify the following only if necessary.
-ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
-ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
+export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
+export ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
 MODULEFILE_DIR="${ROCM_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 
@@ -59,6 +59,7 @@ CMAKE_VERSION=3.23.1
 # -----------------------------------------------------------------------------------------------------------
 #                                          system dependencies
 # -----------------------------------------------------------------------------------------------------------
+module swap PrgEnv-cray PrgEnv-gnu
 module load gcc/10.3.0
 module load cray-python cray-dsmml/0.2.2
 
