@@ -1,13 +1,13 @@
 # Takes as argument an absolute path to a directory and adds the include, lib, bin directories within it 
 # to the build and runtime linux environment variables
 export_vars () {
-    if [ $LIBRARY_PATH = "" ]; then
+    if [ "$LIBRARY_PATH" = "" ]; then
         LIBRARY_PATH=/usr/lib
     fi
-    if [ $ACLOCAL_PATH = "" ]; then
+    if [ "$ACLOCAL_PATH" = "" ]; then
         ACLOCAL_PATH=/share/aclocal
     fi
-    if [ $PKG_CONFIG_PATH = "" ]; then
+    if [ "$PKG_CONFIG_PATH" = "" ]; then
         PKG_CONFIG_PATH=/usr/lib/pkgconfig
     fi
     export LD_LIBRARY_PATH=$1/lib:$1/lib64:$LD_LIBRARY_PATH
@@ -72,16 +72,21 @@ cmake_install () {
     run_command cd "${BUILD_FOLDER}"
 }
 
-
-configure_build () {
-    run_command cd ${BUILD_FOLDER}
+wget_untar_cd () {
     url=$1
     tarfile=${url##*/}
     folder=${tarfile%.tar.gz}
+    if [ -z ${BUILD_FOLDER+x} ]; then BUILD_FOLDER="."; fi;
+    cd ${BUILD_FOLDER}
     [ -e ${tarfile} ] || run_command wget "${url}"
     [ -e ${folder} ] || run_command tar xf "${tarfile}"
-    run_command cd ${folder}
-    run_command ./configure --prefix="${INSTALL_DIR}"
+    run_command cd "$folder"
+}
+
+configure_build () {
+    run_command cd ${BUILD_FOLDER}
+    wget_untar_cd $1
+    run_command ./configure --prefix="${ROCM_INSTALL_DIR}"
     run_command make -j $NCORES install
     cd ${BUILD_FOLDER}
 }

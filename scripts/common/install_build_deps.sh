@@ -14,10 +14,7 @@ export_vars "${BUILD_DEPS}"
 
 # Always use the latest cmake. ROCMm depends heavily on latest CMake features, including HIP support.
 if ! [ -f "${BUILD_DEPS}/bin/cmake" ]; then
-    run_command cd "${BUILD_FOLDER}"
-    run_command wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
-    run_command tar -xf "cmake-${CMAKE_VERSION}.tar.gz"
-    run_command cd "cmake-${CMAKE_VERSION}"
+    wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
     run_command ./configure --prefix="${BUILD_DEPS}"
     run_command make -j $NCORES
     run_command make install
