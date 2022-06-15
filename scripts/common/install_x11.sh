@@ -6,8 +6,8 @@ if [ -z ${ROCM_INSTALL_DIR+x} ] || [ -z ${BUILD_FOLDER+x} ]; then
     echo "'install_x11.sh': one of the input variables is not set."
     exit 1
 fi
-
 INSTALL_DIR=${ROCM_INSTALL_DIR}
+export_vars ${INSTALL_DIR}
 X11_BUILD_FOLDER="${BUILD_FOLDER}/X11"
 export PYTHONPATH=${INSTALL_DIR}/lib/python3.9/site-packages:$PYTHONPATH
 
@@ -30,7 +30,7 @@ build_x11_package() {
 
 # build the dependencies
 configure_build https://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz
-configure_build https://www.x.org/archive//individual/util/util-macros-1.19.3.tar.gz
+build_x11_package https://www.x.org/archive//individual/util/util-macros-1.19.3.tar.gz
 configure_build https://xcb.freedesktop.org/dist/libpthread-stubs-0.1.tar.gz
 
 build_x11_package https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/archive/xtrans-1.4.0/libxtrans-xtrans-1.4.0.tar.gz
