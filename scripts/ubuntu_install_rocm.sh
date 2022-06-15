@@ -49,6 +49,11 @@ run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 #                                              INSTALL
 # ============================================================================================================
 
+if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
+    echo "Cleaning up previous build."
+    run_command rm -rf "${BUILD_FOLDER}"
+fi
+
 . "${SCRIPT_DIR}/common/set_env.sh"
 . "${SCRIPT_DIR}/common/install_rocm.sh"
 

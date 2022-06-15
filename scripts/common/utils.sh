@@ -1,5 +1,12 @@
-# Takes as argument an absolute path to a directory and adds the include, lib, bin directories within it 
-# to the build and runtime linux environment variables
+# utils.sh
+# Utility sh functions to perform common and repetitive tasks.
+# Author: Cristian Di Pietrantonio (cdipietrantonio{at}pawsey{dot}org{dot}au)
+# License: see LICENSE file.
+
+
+
+# Takes as a argument an absolute path to a directory and adds the include, lib, bin, etc.., 
+# directories within it to the relevant build and runtime linux environment variables.
 export_vars () {
     if [ "$LIBRARY_PATH" = "" ]; then
         LIBRARY_PATH=/usr/lib
@@ -44,7 +51,7 @@ cmake_install () {
     PACKAGE_NAME="$1"
     SOURCE_DIR=".."
     if [ $# -eq 1 ]; then
-        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}"
+        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
     else
         CMAKE_FLAGS=""
         declare -i narg
@@ -72,6 +79,7 @@ cmake_install () {
     run_command cd "${BUILD_FOLDER}"
 }
 
+# download and untar an archive, then move into the extracted folder.
 wget_untar_cd () {
     url=$1
     tarfile=${url##*/}
@@ -83,10 +91,24 @@ wget_untar_cd () {
     run_command cd "$folder"
 }
 
+# run a configure build starting from a link to the tar.gz source distribution.
 configure_build () {
     run_command cd ${BUILD_FOLDER}
     wget_untar_cd $1
-    run_command ./configure --prefix="${ROCM_INSTALL_DIR}"
+    run_command ./configure --prefix="${INSTALL_DIR}"
     run_command make -j $NCORES install
     cd ${BUILD_FOLDER}
+}
+
+
+# run a autoreconf & configure build starting from a link to the tar.gz source distribution.
+# useful mainly for the x11 packages
+autoreconf_build () {
+    run_command cd ${BUILD_FOLDER}
+    wget_untar_cd $1
+    run_command aclocal
+    run_command autoreconf -if
+    run_command ./configure --prefix="${INSTALL_DIR}"
+    run_command make -j $NCORES install
+    run_command cd ${BUILD_FOLDER}
 }

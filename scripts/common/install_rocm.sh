@@ -1,6 +1,9 @@
-# ============================================================================================================
-#                                       BUILD ROCM PACKAGES
-# ============================================================================================================
+if [ -z ${ROCM_INSTALL_DIR+x} ] || [ -z ${BUILD_FOLDER+x} ]; then
+    echo "'install_x11.sh': one of the input variables is not set."
+    exit 1
+fi
+INSTALL_DIR="${ROCM_INSTALL_DIR}"
+
 export CPATH="${ROCM_INSTALL_DIR}/rocclr/include/elf:${ROCM_INSTALL_DIR}/include/hsa:$CPATH"
 
 cd "${BUILD_FOLDER}"
@@ -15,65 +18,65 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     # TODO: maybe try another version of hipFFT?
 fi
 
-# cmake_install ROCT-Thunk-Interface
+cmake_install ROCT-Thunk-Interface
 
-# # LLVM
-# DEVICE_LIBS="${BUILD_FOLDER}/ROCm-Device-Libs"
-# BITCODE_DIR="${ROCM_INSTALL_DIR}/llvm/amdgcn/bitcode"
+# LLVM
+DEVICE_LIBS="${BUILD_FOLDER}/ROCm-Device-Libs"
+BITCODE_DIR="${ROCM_INSTALL_DIR}/llvm/amdgcn/bitcode"
 
-# cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-#      -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt" \
-#      -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
-#      -DLLVM_EXTERNAL_PROJECTS=device-libs \
-#      -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
-#      -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"
+cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+     -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt" \
+     -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
+     -DLLVM_EXTERNAL_PROJECTS=device-libs \
+     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
+     -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"
 
-# # The following is needed otherwise clang complains when executing hipcc
-# [ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
-#     run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
+# The following is needed otherwise clang complains when executing hipcc
+[ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
+    run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
 
-# cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
-#     -DBITCODE_DIR="$BITCODE_DIR"
+cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
+    -DBITCODE_DIR="$BITCODE_DIR"
 
-# cmake_install rocm-cmake
-# cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
-#     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
+cmake_install rocm-cmake
+cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
+    -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 
-# cmake_install ROCm-CompilerSupport
-# cmake_install rocm_smi_lib
-# cmake_install rocminfo
+cmake_install ROCm-CompilerSupport
+cmake_install rocm_smi_lib
+cmake_install rocminfo
 
-# # install opencl runtime
-# ROCM_OPENCL_RUNTIME_SRC="${BUILD_FOLDER}/ROCm-OpenCL-Runtime"
-# cmake_install ROCm-OpenCL-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DUSE_COMGR_LIBRARY=ON \
-#     -DROCM_PATH="${ROCM_INSTALL_DIR}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/opencl"
+# install opencl runtime
+ROCM_OPENCL_RUNTIME_SRC="${BUILD_FOLDER}/ROCm-OpenCL-Runtime"
+cmake_install ROCm-OpenCL-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DUSE_COMGR_LIBRARY=ON \
+    -DROCM_PATH="${ROCM_INSTALL_DIR}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/opencl"
 
-# # HIP
-# COMMON_HIP="${BUILD_FOLDER}/HIP"
-# if [ ${SYSTEM_HAS_GPU} -eq 0 ];  then
-#     run_command cd "${ROCM_INSTALL_DIR}/bin"
-#     run_command mv rocm_agent_enumerator rocm_agent_enumerator_backup
-#     echo """#!/bin/bash
-#     echo gfx908
+# HIP
+COMMON_HIP="${BUILD_FOLDER}/HIP"
+if [ ${SYSTEM_HAS_GPU} -eq 0 ];  then
+    run_command cd "${ROCM_INSTALL_DIR}/bin"
+    run_command mv rocm_agent_enumerator rocm_agent_enumerator_backup
+    echo """#!/bin/bash
+    echo gfx908
 
-#     """ > rocm_agent_enumerator
-#     run_command chmod 0755 rocm_agent_enumerator
+    """ > rocm_agent_enumerator
+    run_command chmod 0755 rocm_agent_enumerator
+fi
+
+ROCCLR_DIR="${BUILD_FOLDER}/ROCclr"
+
+cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP \
+    -DCMAKE_PREFIX_PATH="${BUILD_FOLDER}/rocclr;${ROCM_INSTALL_DIR}" -DROCM_PATH=${ROCM_INSTALL_DIR} \
+    -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/hip" -DHSA_PATH=${ROCM_INSTALL_DIR}/hsa \
+    -DROCCLR_PATH=${ROCCLR_DIR} -DAMD_OPENCL_PATH=$ROCM_OPENCL_RUNTIME_SRC \
+    -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS -DHIP_LLVM_ROOT="${ROCM_INSTALL_DIR}/llvm"
+
+# revert back previous hack
+# if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
+#     cd "${ROCM_INSTALL_DIR}/bin"
+#     mv rocm_agent_enumerator_backup rocm_agent_enumerator
+#     cd "${BUILD_FOLDER}"
 # fi
-
-# ROCCLR_DIR="${BUILD_FOLDER}/ROCclr"
-
-# cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP \
-#     -DCMAKE_PREFIX_PATH="${BUILD_FOLDER}/rocclr;${ROCM_INSTALL_DIR}" -DROCM_PATH=${ROCM_INSTALL_DIR} \
-#     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/hip" -DHSA_PATH=${ROCM_INSTALL_DIR}/hsa \
-#     -DROCCLR_PATH=${ROCCLR_DIR} -DAMD_OPENCL_PATH=$ROCM_OPENCL_RUNTIME_SRC \
-#     -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS -DHIP_LLVM_ROOT="${ROCM_INSTALL_DIR}/llvm"
-
-# # revert back previous hack
-# # if [ ${SYSTEM_HAS_GPU} -eq 0 ]; then
-# #     cd "${ROCM_INSTALL_DIR}/bin"
-# #     mv rocm_agent_enumerator_backup rocm_agent_enumerator
-# #     cd "${BUILD_FOLDER}"
-# # fi
 
 cmake_install roctracer -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 cmake_install rocprofiler
@@ -90,7 +93,7 @@ run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_I
   --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
   --disable-ld --disable-gas --disable-gdbserver --disable-sim \
   --disable-gdbtk --disable-shared --with-expat --with-system-zlib \
-  --without-guile --with-lzma --with-python=python3 --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
+  --without-guile --with-lzma --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
 run_command make -j $NCORES
 run_command make -j $NCORES install
 
