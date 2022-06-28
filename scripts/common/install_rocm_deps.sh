@@ -54,7 +54,7 @@ wget_untar_cd https://github.com/mesonbuild/meson/releases/download/0.61.5/meson
 export PATH="${BUILD_FOLDER}/meson-0.61.5:$PATH" # in order to use meson
 if ! [ -e ninja ]; then
     run_command wget https://github.com/ninja-build/ninja/releases/download/v1.11.0/ninja-linux.zip
-    unzip ninja-linux.zip
+    run_command unzip ninja-linux.zip
 fi
 
 

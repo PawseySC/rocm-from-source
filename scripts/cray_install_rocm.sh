@@ -46,8 +46,6 @@ MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 CLEAN_BUILD=0
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
 BUILD_ROCM_DEPS=1
-# if the system does not have a gpu, the script has to do some hacks to indentify properly the available GPUs.
-SYSTEM_HAS_GPU=0
 BUILD_FOLDER="`pwd`/build"
 BUILD_TYPE=Release
 # number of cores to be used to build software
@@ -80,7 +78,7 @@ fi
 . "${SCRIPT_DIR}/common/set_env.sh"
 . "${SCRIPT_DIR}/common/install_build_deps.sh"
 if [ $BUILD_ROCM_DEPS -eq 1 ]; then
-. "${SCRIPT_DIR}/common/install_rocm_deps.sh"
+    . "${SCRIPT_DIR}/common/install_rocm_deps.sh"
 fi
 . "${SCRIPT_DIR}/common/install_rocm.sh"
 
