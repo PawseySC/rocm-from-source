@@ -10,7 +10,7 @@ cd "${BUILD_FOLDER}"
 # ===============================================================================================
 #                                       libX11
 # ===============================================================================================
-export PYTHONPATH=${INSTALL_DIR}/lib/python3.9/site-packages:$PYTHONPATH
+export PYTHONPATH=${INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 
 configure_build https://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz
 autoreconf_build https://www.x.org/archive//individual/util/util-macros-1.19.3.tar.gz
@@ -22,7 +22,7 @@ autoreconf_build https://gitlab.freedesktop.org/xorg/proto/xcbproto/-/archive/xc
 autoreconf_build https://www.x.org/releases/individual/lib/libXau-1.0.6.tar.gz
 autoreconf_build https://gitlab.freedesktop.org/xorg/proto/inputproto/-/archive/inputproto-2.3.2/inputproto-inputproto-2.3.2.tar.gz
 autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/libxcb-1.14/libxcb-libxcb-1.14.tar.gz
-
+autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libpciaccess/-/archive/libpciaccess-0.16/libpciaccess-libpciaccess-0.16.tar.gz
 [ -e kbproto ] || run_command git clone https://gitlab.freedesktop.org/xorg/proto/kbproto
 run_command cd kbproto
 run_command git checkout kbproto-1.0.7

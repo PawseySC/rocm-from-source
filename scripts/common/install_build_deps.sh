@@ -11,7 +11,10 @@ export_vars "${BUILD_DEPS_FOLDER}"
     run_command ln -s `which python3` ${BUILD_DEPS_FOLDER}/bin/python;
 [ -e  ${BUILD_DEPS_FOLDER}/bin/pip ] || \
     run_command ln -s `which pip3` ${BUILD_DEPS_FOLDER}/bin/pip;
-
+[ -e ${BUILD_DEPS_FOLDER}/bin/cc ] || \
+    run_command ln -sL `which gcc` ${BUILD_DEPS_FOLDER}/bin/cc;
+[ -e ${BUILD_DEPS_FOLDER}/bin/CC ] || \
+    run_command ln -sL `which g++` ${BUILD_DEPS_FOLDER}/bin/CC;
 # Always use the latest cmake. ROCMm depends heavily on latest CMake features, including HIP support.
 if ! [ -f "${BUILD_DEPS_FOLDER}/bin/cmake" ]; then
     wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
@@ -25,6 +28,6 @@ if ! [ -f "${BUILD_DEPS_FOLDER}/bin/repo" ]; then
     run_command chmod a+x "${BUILD_DEPS_FOLDER}/bin/repo"
 fi
 
-export PYTHONPATH=${BUILD_DEPS_FOLDER}/pypackages/lib/python3.9/site-packages:$PYTHONPATH
-pip3 install --prefix=${BUILD_DEPS_FOLDER}/pypackages cppheaderparser argparse virtualenv wheel
 export PATH=${BUILD_DEPS_FOLDER}/pypackages/bin:$PATH
+export PYTHONPATH=${BUILD_DEPS_FOLDER}/pypackages/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
+pip3 install --prefix=${BUILD_DEPS_FOLDER}/pypackages cppheaderparser argparse virtualenv wheel

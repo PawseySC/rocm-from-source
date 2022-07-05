@@ -14,6 +14,10 @@ export_vars () {
     export CPATH=$1/include:$1/inc:${CPATH%:}
     export ACLOCAL_PATH=$1/share/aclocal:${ACLOCAL_PATH%:}
     export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
+
+    # the following is needed for compilation purposes
+    export CFLAGS="$CFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
+    export CXXFLAGS="$CXXFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
 }
 
 
