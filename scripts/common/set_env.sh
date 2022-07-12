@@ -5,7 +5,7 @@ export_vars "${ROCM_INSTALL_DIR}/rocclr"
 export_vars "${ROCM_INSTALL_DIR}/opencl"
 export_vars "${ROCM_INSTALL_DIR}/llvm"
 export_vars "${ROCM_INSTALL_DIR}/hip"
-export_vars "${ROCM_INSTALL_DIR}/hipify"
+# export_vars "${ROCM_INSTALL_DIR}/hipify" --gives error because it provides a file "stddef.h"
 export_vars "${ROCM_INSTALL_DIR}/hipcub"
 export_vars "${ROCM_INSTALL_DIR}/roctracer"
 export_vars "${ROCM_INSTALL_DIR}/rocrand"
@@ -20,5 +20,6 @@ export HIP_CLANG_PATH="${ROCM_INSTALL_DIR}/llvm/bin"
 export ROCM_PATH="${ROCM_INSTALL_DIR}"
 export HIP_ROCCLR_HOME=${ROCM_INSTALL_DIR}/hip/rocclr
 export HIP_RUNTIME=rocclr
+export FC=gfortran
 
 export GFXLIST="${GFX_ARCHS}"

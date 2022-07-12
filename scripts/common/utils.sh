@@ -16,8 +16,8 @@ export_vars () {
     export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
 
     # the following is needed for compilation purposes
-    export CFLAGS="$CFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
-    export CXXFLAGS="$CXXFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
+    #export CFLAGS="$CFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
+    #export CXXFLAGS="$CXXFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
 }
 
 
@@ -66,6 +66,10 @@ cmake_install () {
         run_command cd lib/comgr
     elif [ "${PACKAGE_NAME}" = "llvm-project" ]; then
         SOURCE_DIR="../llvm"
+    fi
+    if [ -d build ] && [ $CLEAN_BUILD -eq 1 ]; then
+        echo "Cleaning build directory.."
+        rm -rf build;
     fi
     [ -d build ] || mkdir build 
     run_command cd build

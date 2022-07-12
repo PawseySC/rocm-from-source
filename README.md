@@ -9,6 +9,8 @@ A set of scripts that attempt to install the ROCm framework from source, brought
 Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scripts to install ROCm. At the top of each script
 there are a few variables one can set to personalise the installation.
 
+**NOTE**: the `ubuntu_install_rocm.sh` is slightly out of date at the moment as most effort is put on the CRAY installation.
+
 To use OpenCL, the following command must be executed on every compute node:
 
 ```
@@ -18,18 +20,16 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
 ## TODO
 
-1. Check that rocFFT now works
-2. Try to build rocALUTION
-3. Build Tensile by itself, then use it as dependency in rocblas and miopen
-4. Try to figure out how to better install dependencies.
-5. What about the kernel driver?
-6. How to enable/handle opencl, how does it fit in ROCm?
-7. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
+1. Build Tensile by itself, then use it as dependency in rocblas and miopen
+2. Try to figure out how to better install dependencies.
+3. What about the kernel driver?
+4. How to enable/handle opencl, how does it fit in ROCm?
+5. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
 
 ## Known issues
 
-1. rocALUTION does not compile (https://github.com/ROCmSoftwarePlatform/rocALUTION/issues/144).
-2. rocFFT (hence hipFFT) does not compile (https://github.com/ROCmSoftwarePlatform/rocFFT/issues/363).
+1. rocALUTION requires some hack: 
+```sed -i '65,66d;' ${BUILD_FOLDER}/rocALUTION/src/solvers/multigrid/ruge_stueben_amg.hpp```
 
 ## References
 

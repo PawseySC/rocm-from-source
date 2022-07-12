@@ -31,21 +31,21 @@ GFX_ARCHS="gfx908"
 
 # Locations for ROCm binaries and its dependencies' binaries differ so that you can rebuild only ROCm
 # without having to rebuild dependencies, when it is not needed.
-ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm
+ROOT_INSTALL_DIR=/software/projects/pawsey0001/cdipietrantonio/setonix/manual/rocm
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
 export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
-MODULEFILE_DIR="${ROCM_INSTALL_DIR}/modulefiles/rocm"
+MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 
 # -----------------------------------------------------------------------------------------------------------
 #                                            build parameters
 # -----------------------------------------------------------------------------------------------------------
 # remove the build folder, if exists?
-CLEAN_BUILD=0
+CLEAN_BUILD=1
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
-BUILD_ROCM_DEPS=1
+BUILD_ROCM_DEPS=0
 BUILD_FOLDER="`pwd`/build"
 BUILD_TYPE=Release
 # number of cores to be used to build software
@@ -60,13 +60,12 @@ CMAKE_VERSION=3.23.1
 # Unload any PrgEnv, we want to use gcc explicitly to a void mixing libc implementations.
 module purge
 module load gcc/10.3.0
-export PATH=/opt/gcc/10.3.0/snos/bin:$PATH
-module use /group/pawsey0001/cdipietrantonio/mulan-stuff/modulefiles
-module load python/3.8.5 
-module load cray-dsmml/0.2.2
-module list
-PYTHON_VERSION=3.8 
-# module load cray-python cray-dsmml/0.2.2
+export PATH=${GCC_PATH}/snos/bin:$PATH
+# module use /group/pawsey0001/cdipietrantonio/mulan-stuff/modulefiles
+# module load python/3.8.5 
+# module load cray-dsmml/0.2.2
+PYTHON_VERSION=3.9
+module load cray-python cray-dsmml/0.2.2
 
 
 # ************************************************************************************************************
@@ -81,10 +80,10 @@ export CXXFLAGS="$CFLAGS"
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 . "${SCRIPT_DIR}/common/utils.sh"
 
-if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
-    echo "Cleaning up previous build."
-    run_command rm -rf "${BUILD_FOLDER}"
-fi
+# if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
+#     echo "Cleaning up previous build."
+#     run_command rm -rf "${BUILD_FOLDER}"
+# fi
 
 # include helper functions
 . "${SCRIPT_DIR}/common/set_env.sh"
