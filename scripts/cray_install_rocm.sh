@@ -44,6 +44,8 @@ MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 # -----------------------------------------------------------------------------------------------------------
 # remove the build folder, if exists?
 CLEAN_BUILD=0
+# Do not call cmake/make on packages already installed (uses a sentinel file in the source folder)
+SKIP_INSTALLED=1
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
 BUILD_ROCM_DEPS=1
 BUILD_FOLDER="`pwd`/build"

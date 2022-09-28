@@ -38,6 +38,8 @@ export ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
 # -----------------------------------------------------------------------------------------------------------
 # remove the build folder, if exists?
 CLEAN_BUILD=0
+# Do not call cmake/make on packages already installed (uses a sentinel file in the source folder)
+SKIP_INSTALLED=1
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
 BUILD_ROCM_DEPS=1
 BUILD_FOLDER="`pwd`/build"
@@ -47,7 +49,6 @@ NCORES=8
 # The script will build the latest cmake as ROCm heavily depends on the latest cmake.
 # Specify the latest version please.
 CMAKE_VERSION=3.23.1
-SKIP_INSTALLED=0
 
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
