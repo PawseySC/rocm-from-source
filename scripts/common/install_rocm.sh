@@ -72,9 +72,11 @@ cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_H
     -DROCCLR_PATH=${ROCCLR_DIR} -DAMD_OPENCL_PATH=$ROCM_OPENCL_RUNTIME_SRC \
     -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS -DHIP_LLVM_ROOT="${ROCM_INSTALL_DIR}/llvm"
 
-The following fixes a bug in the installation process for ROCm 5.2
-run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake
-run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
+# The following fixes a bug in the installation process for ROCm 5.2
+[ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake ] || \
+    run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake
+[ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake ] || \
+    run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
 cmake_install roctracer -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
 cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify
@@ -84,16 +86,20 @@ cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake
 
 # ROCgdb is a bit different
 run_command cd "${BUILD_FOLDER}/ROCgdb"
-[ -d build ] || mkdir build
-cd build
-run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
-  --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
-  --disable-ld --disable-gas --disable-gdbserver --disable-sim \
-  --disable-gdbtk --disable-shared --with-expat --with-system-zlib \
-  --without-guile --with-lzma --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
-run_command make -j $NCORES
-run_command make -j $NCORES install
-
+if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
+  	echo "Boost already installed. Skipping.."
+else
+    [ -d build ] || mkdir build
+    cd build
+    run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
+    --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
+    --disable-ld --disable-gas --disable-gdbserver --disable-sim \
+    --disable-gdbtk --disable-shared --with-expat --with-system-zlib \
+    --without-guile --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
+    run_command make -j $NCORES
+    run_command make -j $NCORES install
+    run_command touch ../rfs_installed
+fi
 cmake_install rocm_bandwidth_test
 cmake_install half
 
@@ -115,9 +121,6 @@ cmake_install rocSOLVER -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=
 
 cmake_install rocPRIM -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS
-
-need to build flang
-https://github.com/flang-compiler/flang/wiki/Building-Flang
 
 cmake_install rocSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc  -DCMAKE_FC_COMPILER=gfortran -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF

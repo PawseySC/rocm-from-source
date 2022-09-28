@@ -12,11 +12,11 @@
 #                                              ROCm version
 # ------------------------------------------------------------------------------------------------------------
 # ROCm version - used to dynamically generate paths.
-ROCM_VERSION=5.1.3
+ROCM_VERSION=5.2.3
 # Pawsey build script revision
 SCRIPT_REVISION=0
 # which branch of the ROCM repo to check out.
-ROCM_VERSION_BRANCH=roc-5.1.x
+ROCM_VERSION_BRANCH=roc-5.2.x
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
 GFX_ARCHS="gfx908"
@@ -47,7 +47,7 @@ NCORES=8
 # The script will build the latest cmake as ROCm heavily depends on the latest cmake.
 # Specify the latest version please.
 CMAKE_VERSION=3.23.1
-
+SKIP_INSTALLED=0
 
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
@@ -84,3 +84,10 @@ if [ $BUILD_ROCM_DEPS -eq 1 ]; then
  . "${SCRIPT_DIR}/common/install_rocm_deps.sh"
 fi
 . "${SCRIPT_DIR}/common/install_rocm.sh"
+
+# Generate script to source in order to use the installation
+echo "Generating rocm_setup.sh script..."
+"${SCRIPT_DIR}/common/generate_env_script.sh" > "${ROCM_INSTALL_DIR}/rocm_setup.sh"
+
+echo ""
+echo "ROCm installation terminated successfully!"

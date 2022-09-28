@@ -49,11 +49,11 @@ cmake_install () {
         CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
     else
         CMAKE_FLAGS=""
-        declare -i narg
         narg=0
         for arg in $@;
         do
-            (( narg=narg + 1 ))
+            #(( narg=narg + 1 ))
+            narg=`expr $narg + 1`
             if [ $narg -eq 1 ]; then continue; fi;
             CMAKE_FLAGS="$CMAKE_FLAGS $arg"
         done
@@ -71,10 +71,16 @@ cmake_install () {
         echo "Cleaning build directory.."
         rm -rf build;
     fi
-    [ -d build ] || mkdir build 
-    run_command cd build
-    run_command cmake "${CMAKE_FLAGS}" "${SOURCE_DIR}"
-    run_command make -j ${NCORES} install
+    if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
+  	    echo "${PACKAGE_NAME} already installed. Skipping.."
+    else
+	    [ -d build ] || mkdir build 
+    	run_command cd build
+    	run_command cmake "${CMAKE_FLAGS}" "${SOURCE_DIR}"
+    	run_command make -j ${NCORES} install
+    	run_command cd .. 
+    	run_command touch rfs_installed
+    fi
     run_command cd "${BUILD_FOLDER}"
 }
 
@@ -94,8 +100,13 @@ wget_untar_cd () {
 configure_build () {
     run_command cd ${BUILD_FOLDER}
     wget_untar_cd $1
-    run_command ./configure --prefix="${INSTALL_DIR}"
-    run_command make -j $NCORES install
+     if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
+  	    echo "Package already installed. Skipping.."
+    else
+        run_command ./configure --prefix="${INSTALL_DIR}"
+        run_command make -j $NCORES install
+    	run_command touch rfs_installed
+    fi
     cd ${BUILD_FOLDER}
 }
 
@@ -105,9 +116,14 @@ configure_build () {
 autoreconf_build () {
     run_command cd ${BUILD_FOLDER}
     wget_untar_cd $1
-    run_command aclocal
-    run_command autoreconf -if
-    run_command ./configure --prefix="${INSTALL_DIR}"
-    run_command make -j $NCORES install
+     if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
+  	    echo "Package already installed. Skipping.."
+    else
+        run_command aclocal
+        run_command autoreconf -if
+        run_command ./configure --prefix="${INSTALL_DIR}"
+        run_command make -j $NCORES install
+        run_command touch rfs_installed
+    fi
     run_command cd ${BUILD_FOLDER}
 }

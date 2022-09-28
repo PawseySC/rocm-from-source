@@ -16,7 +16,7 @@
 #                                              ROCm version
 # ------------------------------------------------------------------------------------------------------------
 # ROCm version - used to dynamically generate paths.
-ROCM_VERSION=5.2.0
+ROCM_VERSION=5.2.3
 # Pawsey build script revision
 SCRIPT_REVISION=0
 # which branch of the ROCM repo to check out.
@@ -43,9 +43,9 @@ MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 #                                            build parameters
 # -----------------------------------------------------------------------------------------------------------
 # remove the build folder, if exists?
-CLEAN_BUILD=1
+CLEAN_BUILD=0
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
-BUILD_ROCM_DEPS=0
+BUILD_ROCM_DEPS=1
 BUILD_FOLDER="`pwd`/build"
 BUILD_TYPE=Release
 # number of cores to be used to build software
@@ -80,10 +80,6 @@ export CXXFLAGS="$CFLAGS"
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 . "${SCRIPT_DIR}/common/utils.sh"
 
-# if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
-#     echo "Cleaning up previous build."
-#     run_command rm -rf "${BUILD_FOLDER}"
-# fi
 
 # include helper functions
 . "${SCRIPT_DIR}/common/set_env.sh"
@@ -93,6 +89,13 @@ if [ $BUILD_ROCM_DEPS -eq 1 ]; then
 fi
 . "${SCRIPT_DIR}/common/install_rocm.sh"
 
+# Generate script to source in order to use the installation
+echo "Generating rocm_setup.sh script..."
+"${SCRIPT_DIR}/common/generate_env_script.sh" > "${ROCM_INSTALL_DIR}/rocm_setup.sh"
+
+# In addition, create a modulefile in case a module system exists
 [ -d ${MODULEFILE_DIR} ] || run_command mkdir -p ${MODULEFILE_DIR}
 "${SCRIPT_DIR}/common/generate_modfile.sh" > ${MODULEFILE_PATH}
 
+echo ""
+echo "ROCm installation terminated successfully!"
