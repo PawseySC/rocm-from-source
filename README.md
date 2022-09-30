@@ -6,10 +6,12 @@ A set of scripts that attempt to install the ROCm framework from source, brought
 
 ## Instructions
 
-Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scripts to install ROCm. At the top of each script
-there are a few variables one can set to personalise the installation.
+First, you will need to install the `amdgpu` kernel module for the system to be able to communicate with the AMD hardware. Follow the instructions in [KernelModule.md](KernelModule.md).
 
-**NOTE**: the `ubuntu_install_rocm.sh` is slightly out of date at the moment as most effort is put on the CRAY installation.
+Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scripts to install ROCm. At the top of each script there are a few variables one can set to personalise the installation.
+
+
+## Notes
 
 To use OpenCL, the following command must be executed on every compute node:
 
@@ -22,9 +24,8 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
 1. Build Tensile by itself, then use it as dependency in rocblas and miopen
 2. Try to figure out how to better install dependencies.
-3. What about the kernel driver?
-4. How to enable/handle opencl, how does it fit in ROCm?
-5. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
+3. How to enable/handle opencl, how does it fit in ROCm?
+4. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
 
 ## Known issues
 
