@@ -15,7 +15,7 @@ export_vars "${BUILD_DEPS_FOLDER}"
     run_command ln -sL `which gcc` ${BUILD_DEPS_FOLDER}/bin/cc;
 [ -e ${BUILD_DEPS_FOLDER}/bin/CC ] || \
     run_command ln -sL `which g++` ${BUILD_DEPS_FOLDER}/bin/CC;
-# Always use the latest cmake. ROCMm depends heavily on latest CMake features, including HIP support.
+# Always use the latest cmake. ROCm depends heavily on latest CMake features, including HIP support.
 if ! [ -f "${BUILD_DEPS_FOLDER}/bin/cmake" ]; then
     wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
     run_command ./configure --prefix="${BUILD_DEPS_FOLDER}"

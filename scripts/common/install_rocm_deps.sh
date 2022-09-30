@@ -89,6 +89,9 @@ fi
 # -----------------------------------------------------------------------------------------------------
 #                                          boost
 #------------------------------------------------------------------------------------------------------
+# Exact 1.72.0 version required by MIOpen (https://rocmsoftwareplatform.github.io/MIOpen/doc/html/install.html)
+# TODO: verify this is still the case.
+
 cd ${BUILD_FOLDER}
 # Needed fo Tensile - exactly this version!
 [ -e boost_1_72_0_rc2.tar.gz ] || wget https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0_rc2.tar.gz
@@ -101,7 +104,7 @@ else
     # the following is needed due to a bug in boost 1.72 installation process
     OLD_CPLUS_VAR=$CPLUS_INCLUDE_PATH
     export CPLUS_INCLUDE_PATH=""
-    ( unset CPLUS_INCLUDE_PATH; unset CPATH; ./bootstrap.sh --prefix="${INSTALL_DIR}" )
+    ( unset CPLUS_INCLUDE_PATH; ./bootstrap.sh --prefix="${INSTALL_DIR}" )
     export CPLUS_INCLUDE_PATH=$OLD_CPLUS_VAR
     run_command ./b2 headers
     run_command ./b2 -j$NCORES cxxflags=-fPIC cflags=-fPIC install toolset=gcc --with=all --prefix="${INSTALL_DIR}"

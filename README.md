@@ -27,10 +27,6 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 3. How to enable/handle opencl, how does it fit in ROCm?
 4. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
 
-## Known issues
-
-1. rocALUTION requires some hack: 
-```sed -i '65,66d;' ${BUILD_FOLDER}/rocALUTION/src/solvers/multigrid/ruge_stueben_amg.hpp```
 
 ## References
 
