@@ -29,7 +29,7 @@ GFX_ARCHS="gfx908"
 
 # Locations for ROCm binaries and its dependencies' binaries differ so that you can rebuild only ROCm
 # without having to rebuild dependencies, when it is not needed.
-ROOT_INSTALL_DIR=/opt/rocm-dev
+ROOT_INSTALL_DIR=/opt/rocm
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
