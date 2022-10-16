@@ -24,18 +24,64 @@ cmake_install ROCT-Thunk-Interface
 DEVICE_LIBS="${BUILD_FOLDER}/ROCm-Device-Libs"
 BITCODE_DIR="${ROCM_INSTALL_DIR}/llvm/amdgcn/bitcode"
 
+cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DBUILD_SHARED_LIBS=ON
+
+# https://openmp.llvm.org/SupportAndFAQ.html#build-amdgpu-offload-capable-compiler
+export DEVICELIBS_ROOT=$DEVICE_LIBS
+# Take a look at https://github.com/rocm-arch/rocm-arch/blob/f605d4ed8a34b1a7adc6fc7977c2bf6aee228b72/openmp-extras/PKGBUILD
+
+
 cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-     -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt" \
-     -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
-     -DLLVM_EXTERNAL_PROJECTS=device-libs \
-     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
-     -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"
+    -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt;clang-tools-extra;" \
+    -DLLVM_ENABLE_RUNTIMES="openmp"\
+    -DCMAKE_PREFIX_PATH=${ROCM_INSTALL_DIR}\
+    -DLIBOMP_USE_QUAD_PRECISION=OFF\
+    -DLIBOMPTARGET_AMDGCN_GFXLIST=${GFX_ARCHS}\
+    -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
+    -DLLVM_EXTERNAL_PROJECTS=device-libs \
+    -DLLVM_OFFLOAD_ARCH=${GFX_ARCHS}\
+    -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
+    -DDEVICELIBS_ROOT=$DEVICE_LIBS\
+    -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"
+
 # The following is needed otherwise clang complains when executing hipcc
 [ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
     run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
 
-cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
-    -DBITCODE_DIR="$BITCODE_DIR"
+#cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+#    -DBITCODE_DIR="$BITCODE_DIR"
+#
+cd $BUILD_FOLDER
+git clone https://github.com/ROCm-Developer-Tools/aomp.git
+cd aomp && git checkout rocm-5.2.3
+export AOMP=$ROCM_INSTALL_DIR/llvm
+
+cd $BUILD_FOLDER
+git clone https://github.com/ROCm-Developer-Tools/aomp-extras.git
+cd aomp-extras && git checkout rocm-5.2.3
+cd ..
+export AOMP_VERSION_STRING=5.2.3
+cmake_install aomp-extras -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+    -DCMAKE_CXX_COMPILER=clang++ -DROCM_DIR=${ROCM_INSTALL_DIR} -DCMAKE_C_COMPILER=clang -DAOMP_VERSION_STRING="5.2.3" 
+
+export HIP_DEVICE_LIB_PATH="$BITCODE_DIR" 
+
+# the openmp module is compiled separately
+cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+    -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR}/include/hsa"\
+    -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm\
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++\
+    -DOPENMP_TEST_C_COMPILER=clang -DOPENMP_TEST_CXX_COMPILER=clang++\
+    -DLIBOMPTARGET_AMDGCN_GFXLIST=${GFX_ARCHS}\
+    -DDEVICELIBS_ROOT=${DEVICE_LIBS}\
+    -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
+    -DOPENMP_ENABLE_LIBOMPTARGET=1\
+    -DLIBOMP_COPY_EXPORTS=OFF\
+    -DLIBOMPTARGET_ENABLE_DEBUG=ON\
+    -DLLVM_INSTALL_PREFIX=$ROCM_INSTALL_DIR/llvm\
+    -DLLVM_MAIN_INCLUDE_DIR=$BUILD_FOLDER/llvm-project/llvm/include\
+    -DLIBOMPTARGET_LLVM_INCLUDE_DIRS=$BUILD_FOLDER/llvm-project/llvm/include
+
 
 cmake_install rocm-cmake
 cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \

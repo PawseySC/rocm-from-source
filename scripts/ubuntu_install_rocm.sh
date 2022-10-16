@@ -63,14 +63,14 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 # ============================================================================================================
 
 run_command apt install -y build-essential python3.8-dev gfortran libnuma-dev libudev-dev xxd libudev-dev \
-    libelf-dev libc6-dev-i386 rsync \
+    libelf-dev libc6-dev-i386 rsync cmake \
     curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget \
     libssl-dev python3.8-venv python3.8 libomp-dev autoconf pkgconf gawk autopoint flex bison texinfo zip
 
 run_command curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 run_command python3.8 get-pip.py 
 PYTHON_VERSION=3.8
-run_command pip3 install cppheaderparser argparse virtualenv 
+run_command pip3 install cppheaderparser argparse virtualenv lit
 
 run_command mkdir -p /etc/OpenCL/vendors/
 run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd

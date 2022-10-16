@@ -37,6 +37,7 @@ else
 fi
 autoreconf_build https://www.x.org/releases/individual/lib/libX11-1.6.8.tar.gz
 
+configure_build https://github.com/libffi/libffi/releases/download/v3.4.3/libffi-3.4.3.tar.gz 
 # -----------------------------------------------------------------------------------------------
 #                                    msgpack & fmt
 # -----------------------------------------------------------------------------------------------
