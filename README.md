@@ -13,7 +13,7 @@ Within the `scripts` directory, choose one of the `[arch]_install_rocm.sh` scrip
 
 ## Notes
 
-To use OpenCL, the following command must be executed on every compute node:
+To use OpenCL, the following command must (should?) be executed on every compute node, but I haven't tested it yet.
 
 ```
 mkdir -p /etc/OpenCL/vendors/
@@ -23,11 +23,15 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 ## TODO
 
 1. Build Tensile by itself, then use it as dependency in rocblas and miopen
-2. Try to figure out how to better install dependencies.
-3. How to enable/handle opencl, how does it fit in ROCm?
-4. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
+2. How to enable/handle opencl, how does it fit in ROCm?
+3. Investigate `MIOPEN_USE_MIOPENGEMM=ON` and `MIOPEN_USE_MIOPENTENSILE`
+4. For what concerns AOMP, the following projects should be installed: pgmath flang flang_runtime (see [here](https://github.com/ROCm-Developer-Tools/aomp/blob/aomp-dev/bin/build_aomp.sh))
 
 
 ## References
 
 1. https://github.com/RadeonOpenCompute/ROCm_Documentation/blob/master//Installation_Guide/Using-CMake-with-AMD-ROCm.rst 
+2. OpenMP Offloading
+    - https://openmp.llvm.org/SupportAndFAQ.html#build-amdgpu-offload-capable-compiler
+    - https://github.com/ROCm-Developer-Tools/aomp/blob/aomp-dev/docs/SOURCEINSTALL_PREREQUISITE.md
+    - https://github.com/ROCm-Developer-Tools/aomp/blob/aomp-dev/docs/SOURCEINSTALL.md

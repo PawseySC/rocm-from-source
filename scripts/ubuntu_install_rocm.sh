@@ -71,7 +71,7 @@ run_command curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 run_command python3.8 get-pip.py 
 PYTHON_VERSION=3.8
 run_command pip3 install cppheaderparser argparse virtualenv lit
-
+run_command rm get-pip.py
 run_command mkdir -p /etc/OpenCL/vendors/
 run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
