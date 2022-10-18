@@ -54,7 +54,7 @@ BUILD_TYPE=Release
 NCORES=128
 # The script will build the latest cmake as ROCm heavily depends on the latest cmake.
 # Specify the latest version please.
-CMAKE_VERSION=3.23.1
+CMAKE_VERSION=3.24.2
 export CXXFLAGS="-O3"
 # -----------------------------------------------------------------------------------------------------------
 #                                          system dependencies
@@ -73,7 +73,7 @@ module load cray-python cray-dsmml/0.2.2
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-
+# TODO: test the following PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 RPATH1=$ROCM_INSTALL_DIR/lib
 RPATH2=$ROCM_INSTALL_DIR/lib64
 export CFLAGS="-Wl,-rpath=$RPATH1 -Wl,-rpath=$RPATH2"

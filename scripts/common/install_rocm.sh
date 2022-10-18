@@ -24,19 +24,25 @@ fi
 
 # needed for rocprofiler in/since ROCm 5.3.0
 get_aqlprofiler() {
-    echo "Getting the AQL profiler precompiled library..."
-    cd $BUILD_FOLDER
-    run_command mkdir aqlprofiler
-    AQL_FILENAME=hsa-amd-aqlprofile5.3.0_1.0.0.50300-63~22.04_amd64
-    [ -e ${AQL_FILENAME} ] || run_command wget http://repo.radeon.com/rocm/apt/5.3/pool/main/h/hsa-amd-aqlprofile5.3.0/${AQL_FILENAME}.deb
-    [ -e data.tar.xz ] || run_command ar x ${AQL_FILENAME}.deb
-    run_command tar xf data.tar.xz
-    run_command cp -r opt/rocm-5.3.0/lib/* ${ROCM_INSTALL_DIR}/lib
-    echo "AQL profiler library retrieved."
-    cd $BUILD_FOLDER
+    if [ -e ${ROCM_INSTALL_DIR}/lib/libhsa-amd-aqlprofile64.so ]; then
+        echo "AQL profiler precompiled library is already installed."
+    else
+        echo "Getting the AQL profiler precompiled library..."
+        cd $BUILD_FOLDER
+        run_command mkdir aqlprofiler
+        AQL_FILENAME=hsa-amd-aqlprofile5.3.0_1.0.0.50300-63~22.04_amd64
+        [ -e ${AQL_FILENAME} ] || run_command wget http://repo.radeon.com/rocm/apt/5.3/pool/main/h/hsa-amd-aqlprofile5.3.0/${AQL_FILENAME}.deb
+        [ -e data.tar.xz ] || run_command ar x ${AQL_FILENAME}.deb
+        [ -d opt ] || run_command tar xf data.tar.xz
+        run_command cp -r opt/rocm-5.3.0/lib/* ${ROCM_INSTALL_DIR}/lib
+        echo "AQL profiler library retrieved."
+        cd $BUILD_FOLDER
+    fi
 }
 
-
+# ====================================================================================================================
+#                                        INSTALLATION PROCESS STARTS HERE
+# ====================================================================================================================
 
 cmake_install ROCT-Thunk-Interface
 
@@ -48,7 +54,6 @@ cmake_install ROCT-Thunk-Interface
 
 DEVICE_LIBS="${BUILD_FOLDER}/ROCm-Device-Libs"
 BITCODE_DIR="${ROCM_INSTALL_DIR}/llvm/amdgcn/bitcode"
-
 
 cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;compiler-rt;" \
@@ -65,12 +70,8 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
 
 cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DBITCODE_DIR="$BITCODE_DIR"
 
-run_command rm ${BUILD_FOLDER}/llvm-project/rfs_installed
-
 cmake_install aomp-extras -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=clang++ -DROCM_DIR=${ROCM_INSTALL_DIR} -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm -DCMAKE_C_COMPILER=clang -DAOMP_VERSION_STRING="${ROCM_VERSION}" 
-
-# export HIP_DEVICE_LIB_PATH="$BITCODE_DIR" 
 
 # the openmp module is compiled separately
 cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
@@ -90,6 +91,7 @@ cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
 
 
 cmake_install rocm-cmake
+# export HIP_DEVICE_LIB_PATH="$BITCODE_DIR"  NNEDED?
 cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 
@@ -129,9 +131,17 @@ cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_H
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake
 [ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake ] || \
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
+
 get_aqlprofiler
-cmake_install rocprofiler -DCMAKE_LD_AQLPROFILE=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
-cmake_install roctracer -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
+
+# There seems to be a circular dependency between rocprofiler and roctracer. Roctracer needs rocprof headers,
+# but rocprof needs roctracer to build.
+run_command mkdir -p $BUILD_FOLDER/roctracer/inc/rocprofiler
+run_command cp ${BUILD_FOLDER}/rocprofiler/src/core/*.h ${BUILD_FOLDER}/roctracer/inc/rocprofiler
+run_command cp ${BUILD_FOLDER}/rocprofiler/inc/* ${BUILD_FOLDER}/roctracer/inc/rocprofiler
+
+cmake_install roctracer -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" # -DCMAKE_CXX_FLAGS="-I${BUILD_FOLDER}/roctracer"
+cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
 cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify
 cmake_install ROCdbgapi
 cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
@@ -142,17 +152,22 @@ run_command cd "${BUILD_FOLDER}/ROCgdb"
 if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
   	echo "Boost already installed. Skipping.."
 else
+    if [ -d build ] && [ $CLEAN_BUILD -eq 1 ]; then
+        echo "Cleaning build directory.."
+        run_command rm -rf build;
+    fi
     [ -d build ] || mkdir build
     cd build
     run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
     --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
     --disable-ld --disable-gas --disable-gdbserver --disable-sim \
-    --disable-gdbtk --disable-shared --with-expat --with-system-zlib \
-    --without-guile --with-rocm-dbgapi="${ROCM_INSTALL_DIR}"
+    --disable-gdbtk  --disable-gprofng --disable-shared --with-expat --with-system-zlib \
+    --without-guile --with-rocm-dbgapi="${ROCM_INSTALL_DIR}" 
     run_command make -j $NCORES
     run_command make -j $NCORES install
     run_command touch ../rfs_installed
 fi
+
 cmake_install rocm_bandwidth_test
 cmake_install half
 
@@ -164,7 +179,6 @@ cmake_install rocBLAS -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTA
      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_FILE_REORG_BACKWARD_COMPATIBILITY=ON  -DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake
 export PYTHONPATH=$SAVE_PYTHONPATH
 
-# NEEDED? sed -i 's|#include "rocblas.h"|#include "../rocblas.h"|g' "$ROCM_INSTALL_DIR/include/rocblas/internal/rocblas_device_malloc.hpp"
 cmake_install rocRAND -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=hipcc -DBUILD_HIPRAND=OFF
 
@@ -179,7 +193,6 @@ cmake_install rocSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=
     -DCMAKE_CXX_COMPILER=hipcc  -DCMAKE_FC_COMPILER=gfortran -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF
 
 
-# NEEDED? sed -i '65,66d;' ${BUILD_FOLDER}/rocALUTION/src/solvers/multigrid/ruge_stueben_amg.hpp
 cmake_install rocALUTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF \
     -DCMAKE_MODULE_PATH="${ROCM_INSTALL_DIR}/hip/cmake;${ROCM_INSTALL_DIR}" #  remove this last option
@@ -218,7 +231,7 @@ cmake_install atmi -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE
 
 
 cmake_install rocWMMA -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
-    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGET=${GFX_ARCHS}
+    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DCMAKE_CXX_COMPILER=clang++ -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGET=${GFX_ARCHS}
 
 # FIXTHIS WARNING: #pragma message: cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
 # cmake_install MIOpenGEMM

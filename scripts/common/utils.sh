@@ -104,6 +104,10 @@ configure_build () {
      if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
   	    echo "Package already installed. Skipping.."
     else
+        if [ $CLEAN_BUILD -eq 1 ]; then
+            echo "Cleaning build directory.."
+            run_command make clean
+        fi
         run_command ./configure --prefix="${INSTALL_DIR}"
         run_command make -j $NCORES install
     	run_command touch rfs_installed
@@ -127,4 +131,13 @@ autoreconf_build () {
         run_command touch rfs_installed
     fi
     run_command cd ${BUILD_FOLDER}
+}
+
+
+program_exists () {
+    PROGRAM_EXISTS=0
+    T=`which $1`
+    if [ "$?" = "0" ]; then
+        PROGRAM_EXISTS=1
+    fi
 }

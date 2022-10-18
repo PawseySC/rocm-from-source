@@ -17,15 +17,19 @@ export_vars "${BUILD_DEPS_FOLDER}"
     run_command ln -sL `which g++` ${BUILD_DEPS_FOLDER}/bin/CC;
 # Always use the latest cmake. ROCm depends heavily on latest CMake features, including HIP support.
 
-CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER > 3.23" | bc -l) 
+program_exists cmake
+CMAKE_AVAIL=0
+if [ "$PROGRAM_EXISTS" = "1" ]; then 
+    CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER >= 3.23" | bc -l) 
+fi
 
-if ! [ $CMAKE_AVAIL  ]; then
+if [ "$CMAKE_AVAIL" = "0" ]; then
     wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
     run_command ./configure --prefix="${BUILD_DEPS_FOLDER}"
     run_command make -j $NCORES
     run_command make install
 else
-    echo "A suitable version of CMake is present (CMAKE_AVAIL=$CMAKE_AVAIL), no need to build it from source."
+    echo "A suitable version of CMake is present, no need to build it from source."
 fi
 
 if ! [ -f "${BUILD_DEPS_FOLDER}/bin/repo" ]; then

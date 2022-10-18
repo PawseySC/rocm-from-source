@@ -51,7 +51,7 @@ BUILD_TYPE=Release
 NCORES=8
 # The script will build the latest cmake as ROCm heavily depends on the latest cmake.
 # Specify the latest version please.
-CMAKE_VERSION=3.23.1
+CMAKE_VERSION=3.24.2
 
 export CXXFLAGS="-O3"
 # ************************************************************************************************************
@@ -80,7 +80,7 @@ run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-
+# TODO: test the following PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 # include helper functions
 . "${SCRIPT_DIR}/common/set_env.sh"
 . "${SCRIPT_DIR}/common/install_build_deps.sh"

@@ -2,6 +2,8 @@
 
 A set of `sh` scripts whose objective is to install the AMD ROCm programming framework from source, brought to you by the Pawsey Supercomputing Research Centre.
 
+Maintainer: Cristian Di Pietrantonio.
+
 **NOTE:** this is just an internal project for now, do not share outside as it is quite unstable. For any information, contact Cristian.
 
 ## Why?
@@ -14,6 +16,12 @@ While you can install precompiled binaries of ROCm on a workstation with the hel
 4. Compilation is optimized for the target architecture.
 5. ..do you really need more reasons? 😉
 
+## What is the naming scheme of a release tag?
+
+Each release of `rocm-from-source` is tagged with `rocm-{X}.{Y}.{Z}rev{R}`, where
+
+- `X`, `Y`, `Z` are the major, minor and patch numbers of a ROCm release. That is, they idicate which version of ROCm these scripts build.
+- `R` is the revision number of the build scripts for a given ROCm version. It is increased each time a inmproved build process of the same ROCm release is made public.
 
 ## Instructions
 
@@ -22,7 +30,7 @@ While you can install precompiled binaries of ROCm on a workstation with the hel
 Firstly you will need to install the `amdgpu` kernel module for the system to be able to communicate with the AMD hardware. Follow the instructions in [KernelModule.md](KernelModule.md).
 
 After having installed the kernel module, choose the most appropriate `[arch]_install_rocm.sh` scripts within the `scripts` directory to install ROCm. At the top of each script there are a few variables one can set to personalise the installation. Once you have completed the configuration, simply execute the script. A modulefile (Cray) and/or a shell script (`${ROCM_INSTALL_DIR}/rocm_setup.sh`, to be sourced) are created for you, following a successful installation, to set the correct environment variables in order to use the newly installed ROCm.
-
+ 
 ## Configurable parameters
 
 - TODO
@@ -56,8 +64,9 @@ echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 
 ## References
 
-1. https://github.com/RadeonOpenCompute/ROCm_Documentation/blob/master//Installation_Guide/Using-CMake-with-AMD-ROCm.rst 
-2. OpenMP Offloading
+1. https://github.com/ROCm-Developer-Tools/aomp/tree/aomp-dev/bin
+2. https://github.com/RadeonOpenCompute/ROCm_Documentation/blob/master//Installation_Guide/Using-CMake-with-AMD-ROCm.rst
+3. OpenMP Offloading
     - https://openmp.llvm.org/SupportAndFAQ.html#build-amdgpu-offload-capable-compiler
     - https://github.com/ROCm-Developer-Tools/aomp/blob/aomp-dev/docs/SOURCEINSTALL_PREREQUISITE.md
     - https://github.com/ROCm-Developer-Tools/aomp/blob/aomp-dev/docs/SOURCEINSTALL.md
