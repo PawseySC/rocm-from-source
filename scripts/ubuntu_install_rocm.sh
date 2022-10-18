@@ -14,13 +14,14 @@
 #                                              ROCm version
 # ------------------------------------------------------------------------------------------------------------
 # ROCm version - used to dynamically generate paths.
-ROCM_VERSION=5.2.3
+ROCM_VERSION=5.3.0
 # Pawsey build script revision
 SCRIPT_REVISION=0
 # which branch of the ROCM repo to check out.
-ROCM_VERSION_BRANCH=roc-5.2.x
+ROCM_VERSION_BRANCH=roc-5.3.x
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
+# try: gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+
 GFX_ARCHS="gfx908"
 
 # -----------------------------------------------------------------------------------------------------------
@@ -33,7 +34,7 @@ ROOT_INSTALL_DIR=/opt/rocm
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
-export ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
+export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
 
 # -----------------------------------------------------------------------------------------------------------
 #                                            build parameters
@@ -52,6 +53,7 @@ NCORES=8
 # Specify the latest version please.
 CMAKE_VERSION=3.23.1
 
+export CXXFLAGS="-O3"
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
@@ -78,12 +80,6 @@ run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-
-
-if [ -d "${BUILD_FOLDER}" ] && [ $CLEAN_BUILD -eq 1 ]; then
-    echo "Cleaning up previous build."
-    run_command rm -rf "${BUILD_FOLDER}"
-fi
 
 # include helper functions
 . "${SCRIPT_DIR}/common/set_env.sh"

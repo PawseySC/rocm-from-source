@@ -90,14 +90,11 @@ fi
 # -----------------------------------------------------------------------------------------------------
 #                                          boost
 #------------------------------------------------------------------------------------------------------
-# Exact 1.72.0 version required by MIOpen (https://rocmsoftwareplatform.github.io/MIOpen/doc/html/install.html)
-# TODO: verify this is still the case.
-
 cd ${BUILD_FOLDER}
 # Needed fo Tensile - exactly this version!
-[ -e boost_1_72_0_rc2.tar.gz ] || wget https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0_rc2.tar.gz
-[ -e boost_1_72_0 ] || tar xf boost_1_72_0_rc2.tar.gz
-cd boost_1_72_0
+[ -e boost_1_79_0_rc1.tar.gz ] || wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0_rc1.tar.gz
+[ -e boost_1_79_0 ] || tar xf boost_1_79_0_rc1.tar.gz
+cd boost_1_79_0
 BOOST_ROOT_DIR=`pwd`
 if [ -e rfs_installed ] &&  [ ${SKIP_INSTALLED} -eq 1 ]; then
   	echo "Boost already installed. Skipping.."

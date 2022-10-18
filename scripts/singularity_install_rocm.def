@@ -14,12 +14,12 @@ From: ubuntu:20.04
     rm -rf /rocm-from-source
     
 %environment
-    source /opt/rocm/rocm-5.2.3rev0/rocm_setup.sh
+    source /opt/rocm/rocm-5.3.0rev0/rocm_setup.sh
 
 
 %labels
     Author Pawsey Supercomputing Research Centre
-    Version v5.2.3rev0
+    Version v5.3.0rev0
 
 %help
     This is a custom build of ROCm developed by the Pawsey Supercomputing Research Centre.

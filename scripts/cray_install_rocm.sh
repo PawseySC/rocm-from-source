@@ -16,11 +16,11 @@
 #                                              ROCm version
 # ------------------------------------------------------------------------------------------------------------
 # ROCm version - used to dynamically generate paths.
-ROCM_VERSION=5.2.3
+ROCM_VERSION=5.3.0
 # Pawsey build script revision
 SCRIPT_REVISION=0
 # which branch of the ROCM repo to check out.
-ROCM_VERSION_BRANCH=roc-5.2.x
+ROCM_VERSION_BRANCH=roc-5.3.x
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
 GFX_ARCHS="gfx908"
@@ -55,7 +55,7 @@ NCORES=128
 # The script will build the latest cmake as ROCm heavily depends on the latest cmake.
 # Specify the latest version please.
 CMAKE_VERSION=3.23.1
-
+export CXXFLAGS="-O3"
 # -----------------------------------------------------------------------------------------------------------
 #                                          system dependencies
 # -----------------------------------------------------------------------------------------------------------

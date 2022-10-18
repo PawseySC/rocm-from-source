@@ -41,6 +41,7 @@ run_command () {
 
 # Executes a cmake installation of the project specified as first argument, optionally using the cmake
 # flags passed as further arguments.
+# TODO: enable rpaths using -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON 
 cmake_install () {
     run_command cd "${BUILD_FOLDER}"
     PACKAGE_NAME="$1"
