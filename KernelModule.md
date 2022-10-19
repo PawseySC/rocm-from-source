@@ -27,7 +27,7 @@ To install and enable the `amdgpu` on Ubuntu (similar instructions apply to othe
 
     ```
     wget https://repo.radeon.com/amdgpu-install/22.20/ubuntu/focal/amdgpu-install_22.20.50200-1_all.deb
-    sudo dpkg -i  sudo dpkg -i amdgpu-install_22.20.50200-1_all.deb
+    sudo dpkg -i amdgpu-install_22.20.50200-1_all.deb
     ```
 
 3. Using amdgpu-install, install the `amdgpu` kernel module.

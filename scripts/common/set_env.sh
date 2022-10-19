@@ -1,10 +1,6 @@
 # Needed at build time and runtime
-export_vars "${ROCM_INSTALL_DIR}/rocclr"
 export_vars "${ROCM_INSTALL_DIR}/opencl"
 export_vars "${ROCM_INSTALL_DIR}/llvm"
-export_vars "${ROCM_INSTALL_DIR}/hipcub"
-export_vars "${ROCM_INSTALL_DIR}/mlir"
-export_vars "${ROCM_INSTALL_DIR}/hip"
 export_vars "${ROCM_INSTALL_DIR}"
 export_vars "${ROCM_DEPS_INSTALL_DIR}"
 

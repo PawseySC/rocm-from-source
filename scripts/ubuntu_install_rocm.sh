@@ -17,8 +17,6 @@
 ROCM_VERSION=5.3.0
 # Pawsey build script revision
 SCRIPT_REVISION=0
-# which branch of the ROCM repo to check out.
-ROCM_VERSION_BRANCH=roc-5.3.x
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
 # try: gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+
@@ -65,13 +63,12 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 # ============================================================================================================
 
 run_command apt install -y build-essential python3.8-dev gfortran libnuma-dev libudev-dev xxd libudev-dev \
-    libelf-dev libc6-dev-i386 rsync cmake \
+    libelf-dev libc6-dev-i386 rsync cmake bc\
     curl git libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev wget \
     libssl-dev python3.8-venv python3.8 libomp-dev autoconf pkgconf gawk autopoint flex bison texinfo zip
 
 run_command curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 run_command python3.8 get-pip.py 
-PYTHON_VERSION=3.8
 run_command pip3 install cppheaderparser argparse virtualenv lit
 run_command rm get-pip.py
 run_command mkdir -p /etc/OpenCL/vendors/
@@ -80,7 +77,7 @@ run_command echo "libamdocl64.so" > /etc/OpenCL/vendors/amdocl64.icd
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-# TODO: test the following PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
+PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 # include helper functions
 . "${SCRIPT_DIR}/common/set_env.sh"
 . "${SCRIPT_DIR}/common/install_build_deps.sh"

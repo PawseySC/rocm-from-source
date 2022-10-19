@@ -9,18 +9,13 @@ function export_vars {
 
 echo  "if (mode() ~= \"whatis\") then"
 
-export_vars "${ROCM_DEPS_INSTALL_DIR}"
-export_vars "${ROCM_INSTALL_DIR}"
-export_vars "${ROCM_INSTALL_DIR}/rocclr"
 export_vars "${ROCM_INSTALL_DIR}/opencl"
 export_vars "${ROCM_INSTALL_DIR}/llvm"
-export_vars "${ROCM_INSTALL_DIR}/hip"
-export_vars "${ROCM_INSTALL_DIR}/roctracer"
-export_vars "${ROCM_INSTALL_DIR}/rocrand"
-export_vars "${ROCM_INSTALL_DIR}/rocblas"
-export_vars "${ROCM_INSTALL_DIR}/rocsolver"
-export_vars "${ROCM_INSTALL_DIR}/rocsparse"
+export_vars "${ROCM_INSTALL_DIR}/hipcub"
 export_vars "${ROCM_INSTALL_DIR}/mlir"
+export_vars "${ROCM_INSTALL_DIR}/hip"
+export_vars "${ROCM_INSTALL_DIR}"
+export_vars "${ROCM_DEPS_INSTALL_DIR}"
 
 
 echo "setenv(\"HIP_PATH\", \"${ROCM_INSTALL_DIR}/hip\")"

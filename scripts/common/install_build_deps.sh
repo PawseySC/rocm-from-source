@@ -20,7 +20,11 @@ export_vars "${BUILD_DEPS_FOLDER}"
 program_exists cmake
 CMAKE_AVAIL=0
 if [ "$PROGRAM_EXISTS" = "1" ]; then 
-    CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER >= 3.23" | bc -l) 
+    CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER >= 3.23" | bc -l)
+    if [ $? -ne 0 ]; then
+        echo "Error while retrieving the cmake version."
+        exit 1
+    fi
 fi
 
 if [ "$CMAKE_AVAIL" = "0" ]; then

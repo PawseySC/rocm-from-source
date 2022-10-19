@@ -4,7 +4,7 @@ A set of `sh` scripts whose objective is to install the AMD ROCm programming fra
 
 Maintainer: Cristian Di Pietrantonio.
 
-**NOTE:** this is just an internal project for now, do not share outside as it is quite unstable. For any information, contact Cristian.
+**NOTE:** this is just an internal project for now, do not share outside as it has not been tested. For any information, contact Cristian.
 
 ## Why?
 

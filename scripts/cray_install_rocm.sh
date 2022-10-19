@@ -19,8 +19,6 @@
 ROCM_VERSION=5.3.0
 # Pawsey build script revision
 SCRIPT_REVISION=0
-# which branch of the ROCM repo to check out.
-ROCM_VERSION_BRANCH=roc-5.3.x
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
 GFX_ARCHS="gfx908"
@@ -66,14 +64,13 @@ export PATH=${GCC_PATH}/snos/bin:$PATH
 # module use /group/pawsey0001/cdipietrantonio/mulan-stuff/modulefiles
 # module load python/3.8.5 
 # module load cray-dsmml/0.2.2
-PYTHON_VERSION=3.9
 module load cray-python cray-dsmml/0.2.2
 
 
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
-# TODO: test the following PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
+PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 RPATH1=$ROCM_INSTALL_DIR/lib
 RPATH2=$ROCM_INSTALL_DIR/lib64
 export CFLAGS="-Wl,-rpath=$RPATH1 -Wl,-rpath=$RPATH2"

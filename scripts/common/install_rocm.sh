@@ -8,7 +8,8 @@ export CPATH="${ROCM_INSTALL_DIR}/rocclr/include/elf:${ROCM_INSTALL_DIR}/include
 
 cd "${BUILD_FOLDER}"
 if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of software already being do 
-    echo "Downloading ROCM repositories"
+    ROCM_VERSION_BRANCH="roc-${ROCM_VERSION%.*}.x"
+    echo "Downloading ROCM repositories at branch ${ROCM_VERSION_BRANCH}"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b ${ROCM_VERSION_BRANCH}
     # MIOpen fails to sync for some reason, but let it go, we are not interested in it for now
     repo sync

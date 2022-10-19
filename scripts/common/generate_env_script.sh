@@ -8,7 +8,6 @@ export_vars () {
 }
 
 
-export_vars "${ROCM_INSTALL_DIR}/rocclr"
 export_vars "${ROCM_INSTALL_DIR}/opencl"
 export_vars "${ROCM_INSTALL_DIR}/llvm"
 export_vars "${ROCM_INSTALL_DIR}/hipcub"
