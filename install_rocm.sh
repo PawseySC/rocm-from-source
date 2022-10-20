@@ -79,7 +79,7 @@ NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
 
 
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
-. "${SCRIPT_DIR}/common/utils.sh"
+. "${SCRIPT_DIR}/lib/utils.sh"
 
 # We supports several OSes. For each one we adopt a different technique TODO: continue.
 OS_NAME=`cat /etc/os-release | grep -E "^NAME" | cut -d'"' -f2`
@@ -124,22 +124,22 @@ fi
 
 PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 # include helper functions
-. "${SCRIPT_DIR}/common/set_env.sh"
-. "${SCRIPT_DIR}/common/install_build_deps.sh"
+. "${SCRIPT_DIR}/lib/set_env.sh"
+. "${SCRIPT_DIR}/lib/install_build_deps.sh"
 if [ $BUILD_ROCM_DEPS -eq 1 ]; then
- . "${SCRIPT_DIR}/common/install_rocm_deps.sh"
+ . "${SCRIPT_DIR}/lib/install_rocm_deps.sh"
 fi
-. "${SCRIPT_DIR}/common/install_rocm_projects.sh"
+. "${SCRIPT_DIR}/lib/install_rocm_projects.sh"
 
 # Generate script to source in order to use the installation
 echo "Generating rocm_setup.sh script..."
-"${SCRIPT_DIR}/common/generate_env_script.sh" > "${ROCM_INSTALL_DIR}/rocm_setup.sh"
+"${SCRIPT_DIR}/bin/generate_env_script.sh" > "${ROCM_INSTALL_DIR}/rocm_setup.sh"
 
 if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     # In addition, create a modulefile in case a module system exists
     echo "Generating modulefile.."
     [ -d ${MODULEFILE_DIR} ] || run_command mkdir -p ${MODULEFILE_DIR}
-    "${SCRIPT_DIR}/common/generate_modfile.sh" > ${MODULEFILE_PATH}
+    "${SCRIPT_DIR}/bin/generate_modfile.sh" > ${MODULEFILE_PATH}
 fi
 
 echo ""
