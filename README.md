@@ -20,16 +20,16 @@ While you can install precompiled binaries of ROCm on a workstation with the hel
 
 Each release of `rocm-from-source` is tagged with `rocm-{X}.{Y}.{Z}rev{R}`, where
 
-- `X`, `Y`, `Z` are the major, minor and patch numbers of a ROCm release. That is, they idicate which version of ROCm these scripts build.
+- `X`, `Y`, `Z` are the major, minor and patch numbers of a ROCm release. That is, they idicate which version of ROCm this project builds.
 - `R` is the revision number of the build scripts for a given ROCm version. It is increased each time a inmproved build process of the same ROCm release is made public.
 
 ## Instructions
 
 **NOTE:** Start the installation from a clean state, if possible. That is, make sure that ROCm is not installed systemwide (under `/usr/bin`, `/bin`), and that is a "hard no", nor under the default ROCm paths `/opt/rocm/rocm-xxx`, if possible. Those installations will interfere with the build process.
 
-Firstly you will need to install the `amdgpu` kernel module for the system to be able to communicate with the AMD hardware. Follow the instructions in [KernelModule.md](KernelModule.md).
+Firstly you will need to install the `amdgpu` kernel module for the system to be able to communicate with the AMD hardware. Follow the instructions in [KernelModule.md](docs/KernelModule.md).
 
-After having installed the kernel module, choose the most appropriate `[arch]_install_rocm.sh` scripts within the `scripts` directory to install ROCm. At the top of each script there are a few variables one can set to personalise the installation. Once you have completed the configuration, simply execute the script. A modulefile (Cray) and/or a shell script (`${ROCM_INSTALL_DIR}/rocm_setup.sh`, to be sourced) are created for you, following a successful installation, to set the correct environment variables in order to use the newly installed ROCm.
+After having installed the kernel module, you can run the `install_rocm.sh` script. At the top of the script there are a few variables one can set to personalise the installation. Once you have completed the configuration, simply execute the script. A modulefile (Cray) and/or a shell script (`${ROCM_INSTALL_DIR}/rocm_setup.sh`, to be sourced) are created for you, following a successful installation, to set the correct environment variables in order to use the newly installed ROCm.
  
 ## Configurable parameters
 
