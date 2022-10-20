@@ -9,8 +9,9 @@ From: ubuntu:20.04
 %post
     ln -s /usr/share/zoneinfo/Australia/Perth /etc/localtime
     apt-get -y update
+    export ROOT_INSTALL_DIR=/opt/rocm
     export CPATH=/usr/include/python3.9:$CPATH
-    /rocm-from-source/ubuntu_install_rocm.sh
+    /rocm-from-source/install_rocm.sh
     rm -rf /rocm-from-source
     
 %environment
