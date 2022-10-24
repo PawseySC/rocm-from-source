@@ -8,6 +8,10 @@ cd ${BUILD_FOLDER}
 [ -d "${BUILD_DEPS_FOLDER}/bin" ] || mkdir -p "${BUILD_DEPS_FOLDER}/bin"
 export_vars "${BUILD_DEPS_FOLDER}"
 
+# we need opengl headers
+[ -e mesa ] || run_command git clone https://github.com/anholt/mesa.git
+export_vars "${BUILD_DEPS_FOLDER}/mesa"
+
 # we need "python" and "pip" executables
 [ -e ${BUILD_DEPS_FOLDER}/bin/python ] || \
     run_command ln -s `which python3` ${BUILD_DEPS_FOLDER}/bin/python;
@@ -29,12 +33,17 @@ fi
 program_exists cmake
 CMAKE_AVAIL=0
 if [ "$PROGRAM_EXISTS" = "1" ]; then 
-    CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER >= 3.23" | bc -l)
+    CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER 3.23" | awk '{if ($1 >= $2) print 1; else print 0}')
     if [ $? -ne 0 ]; then
         echo "Error while retrieving the cmake version."
         exit 1
     fi
 fi
+
+# makeinfo
+echo "#!/bin/bash
+exit 0" > ${BUILD_DEPS_FOLDER}/bin/makeinfo
+run_command chmod 0777  ${BUILD_DEPS_FOLDER}/bin/makeinfo
 
 if [ "$CMAKE_AVAIL" = "0" ]; then
     wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"

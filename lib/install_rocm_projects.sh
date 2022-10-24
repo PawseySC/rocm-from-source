@@ -96,10 +96,11 @@ cmake_install ROCm-OpenCL-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DUSE_COMGR
 # not urgent, we have only one architecture on each system now
 run_command cd "${ROCM_INSTALL_DIR}/bin"
 run_command mv rocm_agent_enumerator rocm_agent_enumerator.old
-echo """#!/bin/bash
-echo ${GFX_ARCHS}
-
-""" > rocm_agent_enumerator
+echo "#!/bin/bash" > rocm_agent_enumerator
+for gfx in ${GFX_ARCHS//;/ }
+do
+    echo "echo $gfx" >> rocm_agent_enumerator
+done
 run_command chmod 0755 rocm_agent_enumerator
 
 # HIP
