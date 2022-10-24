@@ -4,7 +4,7 @@ From: ubuntu:20.04
 
 %setup
     mkdir ${SINGULARITY_ROOTFS}/rocm-from-source
-    cp -r common *.sh ${SINGULARITY_ROOTFS}/rocm-from-source
+    cp -r lib *.sh ${SINGULARITY_ROOTFS}/rocm-from-source
 
 %post
     ln -s /usr/share/zoneinfo/Australia/Perth /etc/localtime

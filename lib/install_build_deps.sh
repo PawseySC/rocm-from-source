@@ -3,20 +3,29 @@
 # ============================================================================================================
 
 BUILD_DEPS_FOLDER="${BUILD_FOLDER}/build-deps"
+cd ${BUILD_FOLDER}
+
 [ -d "${BUILD_DEPS_FOLDER}/bin" ] || mkdir -p "${BUILD_DEPS_FOLDER}/bin"
 export_vars "${BUILD_DEPS_FOLDER}"
 
 # we need "python" and "pip" executables
-[ -e  ${BUILD_DEPS_FOLDER}/bin/python ] || \
+[ -e ${BUILD_DEPS_FOLDER}/bin/python ] || \
     run_command ln -s `which python3` ${BUILD_DEPS_FOLDER}/bin/python;
-[ -e  ${BUILD_DEPS_FOLDER}/bin/pip ] || \
+[ -e ${BUILD_DEPS_FOLDER}/bin/pip ] || \
     run_command ln -s `which pip3` ${BUILD_DEPS_FOLDER}/bin/pip;
-[ -e ${BUILD_DEPS_FOLDER}/bin/cc ] || \
-    run_command ln -sL `which gcc` ${BUILD_DEPS_FOLDER}/bin/cc;
-[ -e ${BUILD_DEPS_FOLDER}/bin/CC ] || \
-    run_command ln -sL `which g++` ${BUILD_DEPS_FOLDER}/bin/CC;
-# Always use the latest cmake. ROCm depends heavily on latest CMake features, including HIP support.
 
+# Install git-lfs if needed
+program_exists git-lfs
+
+if [ $PROGRAM_EXISTS -eq 0 ]; then
+    [ -e git-lfs-linux-amd64-v3.2.0.tar.gz ] || \
+        run_command wget https://github.com/git-lfs/git-lfs/releases/download/v3.2.0/git-lfs-linux-amd64-v3.2.0.tar.gz
+    [ -d git-lfs-3.2.0 ] || \
+        run_command tar xf git-lfs-linux-amd64-v3.2.0.tar.gz
+    run_command cp git-lfs-3.2.0/git-lfs ${BUILD_DEPS_FOLDER}/bin
+fi
+
+# Always use the latest cmake. ROCm depends heavily on latest CMake features, including HIP support.
 program_exists cmake
 CMAKE_AVAIL=0
 if [ "$PROGRAM_EXISTS" = "1" ]; then 

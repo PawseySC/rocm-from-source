@@ -27,13 +27,16 @@ Each release of `rocm-from-source` is tagged with `rocm-{X}.{Y}.{Z}rev{R}`, wher
 
 **NOTE:** Start the installation from a clean state, if possible. That is, make sure that ROCm is not installed systemwide (under `/usr/bin`, `/bin`), and that is a "hard no", nor under the default ROCm paths `/opt/rocm/rocm-xxx`, if possible. Those installations will interfere with the build process.
 
-Firstly you will need to install the `amdgpu` kernel module for the system to be able to communicate with the AMD hardware. Follow the instructions in [KernelModule.md](docs/KernelModule.md).
+ROCm meeds the `amdgpu` kernel module to work. Cray systems shipping with AMD GPUs will have it already installed. If this is not the case for your system, you can install the kernel module by following the instructions in [KernelModule.md](docs/KernelModule.md).
 
-After having installed the kernel module, you can run the `install_rocm.sh` script. At the top of the script there are a few variables one can set to personalise the installation. Once you have completed the configuration, simply execute the script. A modulefile (Cray) and/or a shell script (`${ROCM_INSTALL_DIR}/rocm_setup.sh`, to be sourced) are created for you, following a successful installation, to set the correct environment variables in order to use the newly installed ROCm.
+To install the ROCm stack you can run the `install_rocm.sh` script. At the top of the script there are a few variables one can set to personalise the installation. Once you have completed the configuration, simply execute the script. A modulefile (Cray) and/or a shell script (`${ROCM_INSTALL_DIR}/rocm_setup.sh`, to be sourced) are created for you, following a successful installation, to set the correct environment variables in order to use the newly installed ROCm.
  
-## Configurable parameters
+## Script parameters
 
-- TODO
+- `ROOT_INSTALL_DIR`: path to the parent installation directory of the ROCm version being built. That is, at the end of the script execution ROCm can be found at `${ROOT_INSTALL_DIR}/rocm{X}.{Y}.{Z}rev{R}`.
+- `BUILD_DEPS`: can be `1` or `0` and indicates whether to build ROCm dependencies. They might have been already built for a previous ROCm version.
+- `GFX_ARCHS`: GPU architectures to be supported by ROCm.
+- `BUILD_TYPE`: Build ROCm in Release or Debug mode.
 
 ## Containers
 

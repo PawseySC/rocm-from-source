@@ -109,6 +109,12 @@ else
     run_command touch "${BOOST_ROOT_DIR}/rfs_installed"
 fi
 # -----------------------------------------------------------------------------------------------------
+#                                          gettext
+#------------------------------------------------------------------------------------------------------
+configure_build https://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.gz
+
+
+# -----------------------------------------------------------------------------------------------------
 #                                          elfutils
 #------------------------------------------------------------------------------------------------------
 cd ${BUILD_FOLDER}
@@ -154,3 +160,25 @@ else
     run_command make -j $NCORES install
     run_command touch ../rfs_installed
 fi
+
+
+# needed for rocprofiler in/since ROCm 5.3.0
+get_aqlprofiler() {
+    if [ -e ${ROCM_INSTALL_DIR}/lib/libhsa-amd-aqlprofile64.so ]; then
+        echo "AQL profiler precompiled library is already installed."
+    else
+        echo "Getting the AQL profiler precompiled library..."
+        cd $BUILD_FOLDER
+        run_command mkdir aqlprofiler
+        AQL_FILENAME=hsa-amd-aqlprofile5.3.0_1.0.0.50300-63~22.04_amd64
+        [ -e ${AQL_FILENAME} ] || run_command wget http://repo.radeon.com/rocm/apt/5.3/pool/main/h/hsa-amd-aqlprofile5.3.0/${AQL_FILENAME}.deb
+        [ -e data.tar.xz ] || run_command ar x ${AQL_FILENAME}.deb
+        [ -d opt ] || run_command tar xf data.tar.xz
+        mkdir -p ${ROCM_INSTALL_DIR}/lib
+        run_command cp -r opt/rocm-5.3.0/lib/* ${ROCM_INSTALL_DIR}/lib
+        echo "AQL profiler library retrieved."
+        cd $BUILD_FOLDER
+    fi
+}
+
+get_aqlprofiler

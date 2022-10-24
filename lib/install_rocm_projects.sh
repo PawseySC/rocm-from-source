@@ -11,10 +11,10 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     ROCM_VERSION_BRANCH="roc-${ROCM_VERSION%.*}.x"
     echo "Downloading ROCM repositories at branch ${ROCM_VERSION_BRANCH}"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b ${ROCM_VERSION_BRANCH}
-    # MIOpen fails to sync for some reason, but let it go, we are not interested in it for now
-    repo sync
+    run_command repo sync
     run_command git clone -b release/rocm-rel-5.0 https://github.com/ROCmSoftwarePlatform/hipRAND.git
     # Needed for MIOpen
+    # TODO: the following needs some updating
     # run_command git clone -b release/rocm-5.1 https://github.com/ROCmSoftwarePlatform/llvm-project-mlir.git
    
     run_command cd $BUILD_FOLDER
@@ -22,24 +22,6 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     cd aomp-extras && git checkout rocm-${ROCM_VERSION}
 fi
 
-
-# needed for rocprofiler in/since ROCm 5.3.0
-get_aqlprofiler() {
-    if [ -e ${ROCM_INSTALL_DIR}/lib/libhsa-amd-aqlprofile64.so ]; then
-        echo "AQL profiler precompiled library is already installed."
-    else
-        echo "Getting the AQL profiler precompiled library..."
-        cd $BUILD_FOLDER
-        run_command mkdir aqlprofiler
-        AQL_FILENAME=hsa-amd-aqlprofile5.3.0_1.0.0.50300-63~22.04_amd64
-        [ -e ${AQL_FILENAME} ] || run_command wget http://repo.radeon.com/rocm/apt/5.3/pool/main/h/hsa-amd-aqlprofile5.3.0/${AQL_FILENAME}.deb
-        [ -e data.tar.xz ] || run_command ar x ${AQL_FILENAME}.deb
-        [ -d opt ] || run_command tar xf data.tar.xz
-        run_command cp -r opt/rocm-5.3.0/lib/* ${ROCM_INSTALL_DIR}/lib
-        echo "AQL profiler library retrieved."
-        cd $BUILD_FOLDER
-    fi
-}
 
 # ====================================================================================================================
 #                                        INSTALLATION PROCESS STARTS HERE
@@ -69,7 +51,10 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
 [ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
     run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
 
-cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DBITCODE_DIR="$BITCODE_DIR"
+export CXX=clang++
+export CC=clang
+
+cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++  -DBITCODE_DIR="$BITCODE_DIR"
 
 cmake_install aomp-extras -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=clang++ -DROCM_DIR=${ROCM_INSTALL_DIR} -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm -DCMAKE_C_COMPILER=clang -DAOMP_VERSION_STRING="${ROCM_VERSION}" 
@@ -96,9 +81,9 @@ cmake_install rocm-cmake
 cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 
-cmake_install ROCm-CompilerSupport
-cmake_install rocm_smi_lib
-cmake_install rocminfo
+cmake_install ROCm-CompilerSupport  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+cmake_install rocm_smi_lib  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+cmake_install rocminfo  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
 # install opencl runtime
 ROCM_OPENCL_RUNTIME_SRC="${BUILD_FOLDER}/ROCm-OpenCL-Runtime"
@@ -121,19 +106,17 @@ run_command chmod 0755 rocm_agent_enumerator
 COMMON_HIP="${BUILD_FOLDER}/HIP"
 ROCCLR_DIR="${BUILD_FOLDER}/ROCclr"
 
-cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP \
+cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++  \
     -DCMAKE_PREFIX_PATH="${BUILD_FOLDER}/rocclr;${ROCM_INSTALL_DIR}" -DROCM_PATH=${ROCM_INSTALL_DIR} \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DHSA_PATH=${ROCM_INSTALL_DIR}/hsa \
     -DROCCLR_PATH=${ROCCLR_DIR} -DAMD_OPENCL_PATH=$ROCM_OPENCL_RUNTIME_SRC \
     -DCMAKE_HIP_ARCHITECTURES=$GFX_ARCHS -DHIP_LLVM_ROOT="${ROCM_INSTALL_DIR}/llvm"
 
-# The following fixes a bug in the installation process for ROCm 5.2
+# The following fixes a bug in the installation process (I guess)
 [ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake ] || \
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets.cmake
 [ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake ] || \
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
-
-get_aqlprofiler
 
 # There seems to be a circular dependency between rocprofiler and roctracer. Roctracer needs rocprof headers,
 # but rocprof needs roctracer to build.
@@ -141,12 +124,13 @@ run_command mkdir -p $BUILD_FOLDER/roctracer/inc/rocprofiler
 run_command cp ${BUILD_FOLDER}/rocprofiler/src/core/*.h ${BUILD_FOLDER}/roctracer/inc/rocprofiler
 run_command cp ${BUILD_FOLDER}/rocprofiler/inc/* ${BUILD_FOLDER}/roctracer/inc/rocprofiler
 
-cmake_install roctracer -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" # -DCMAKE_CXX_FLAGS="-I${BUILD_FOLDER}/roctracer"
-cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
-cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify
-cmake_install ROCdbgapi
+# fix the following too
+cmake_install roctracer -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/lib64/cmake/hip -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" # -DCMAKE_CXX_FLAGS="-I${BUILD_FOLDER}/roctracer"
+cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
+cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake_install ROCdbgapi -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
+    -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
 
 # ROCgdb is a bit different
 run_command cd "${BUILD_FOLDER}/ROCgdb"
@@ -169,8 +153,8 @@ else
     run_command touch ../rfs_installed
 fi
 
-cmake_install rocm_bandwidth_test
-cmake_install half
+cmake_install rocm_bandwidth_test  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+cmake_install half  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
 SAVE_PYTHONPATH=$PYTHONPATH
 unset PYTHONPATH
@@ -228,7 +212,7 @@ cmake_install rccl -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROC
 
 cmake_install atmi -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DLLVM_DIR="${ROCM_INSTALL_DIR}/llvm" -DDEVICE_LIB_DIR=${DEVICE_LIBS} -DATMI_DEVICE_RUNTIME=ON \
-    -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa"
+    -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
 
 cmake_install rocWMMA -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\

@@ -11,7 +11,7 @@
 # Locations for ROCm binaries and its dependencies' binaries differ so that you can rebuild only ROCm
 # without having to rebuild dependencies, when it is not needed.
 
-# ROOT_INSTALL_DIR=
+ROOT_INSTALL_DIR=/opt/rocm
 
 if [ -z ${ROOT_INSTALL_DIR+x} ]; then
     echo "You must set the ROOT_INSTALL_DIR environment variable to the path where to install ROCm."
@@ -24,10 +24,10 @@ fi
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
 # try: gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+
-GFX_ARCHS="gfx908"
+GFX_ARCHS="gfx908;gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER="`pwd`/build"
+BUILD_FOLDER=`pwd`/build
 
 BUILD_TYPE=Release
 
@@ -71,16 +71,14 @@ N_CPU_SOCKETS=`cat /proc/cpuinfo | grep "physical id"  | sort | uniq | wc -l`
 N_CORES_PER_SOCKET=`cat /proc/cpuinfo | grep "cpu cores" | head -n1 | grep -oE [0-9]+`
 # Number of cores to be used to build software. In general you should be using all the cores available.
 NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
-  
+echo "Running the build with $NCORES cores.."  
 
 # ************************************************************************************************************
 # *               !! USER INPUT STOPS HERE - DO NOT MODIFY ANYTHING BELOW THIS POINT !!
 # ************************************************************************************************************
 
-
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 . "${SCRIPT_DIR}/lib/utils.sh"
-
 # We supports several OSes. For each one we adopt a different technique TODO: continue.
 OS_NAME=`cat /etc/os-release | grep -E "^NAME" | cut -d'"' -f2`
 if [ -z ${INSTALL_ON_SUPERCOMPUTER+x} ]; then
@@ -121,6 +119,8 @@ else
     exit 1
 fi
 
+[ -e ${ROCM_INSTALL_DIR}/lib64 ] || run_command mkdir -p ${ROCM_INSTALL_DIR}/lib64
+[ -e ${ROCM_INSTALL_DIR}/lib ] || run_command ln -s ${ROCM_INSTALL_DIR}/lib64 ${ROCM_INSTALL_DIR}/lib
 
 PYTHON_VERSION="3.`python3 --version | cut -d "." -f 2`"
 # include helper functions

@@ -14,7 +14,6 @@ export_vars () {
     export CPATH=$1/include:$1/inc:${CPATH%:}
     export ACLOCAL_PATH=$1/share/aclocal:${ACLOCAL_PATH%:}
     export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
-
     # the following is needed for compilation purposes
     #export CFLAGS="$CFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
     #export CXXFLAGS="$CXXFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
@@ -53,7 +52,6 @@ cmake_install () {
         narg=0
         for arg in $@;
         do
-            #(( narg=narg + 1 ))
             narg=`expr $narg + 1`
             if [ $narg -eq 1 ]; then continue; fi;
             CMAKE_FLAGS="$CMAKE_FLAGS $arg"
@@ -78,7 +76,7 @@ cmake_install () {
 	    [ -d build ] || mkdir build 
     	run_command cd build
     	run_command cmake "${CMAKE_FLAGS}" "${SOURCE_DIR}"
-    	run_command make -j ${NCORES} install
+    	run_command make VERBOSE=1 -j ${NCORES} install
     	run_command cd .. 
     	run_command touch rfs_installed
     fi
@@ -106,7 +104,7 @@ configure_build () {
     else
         if [ $CLEAN_BUILD -eq 1 ]; then
             echo "Cleaning build directory.."
-            run_command make clean
+            make clean
         fi
         run_command ./configure --prefix="${INSTALL_DIR}"
         run_command make -j $NCORES install

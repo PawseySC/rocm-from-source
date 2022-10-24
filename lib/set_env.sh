@@ -13,3 +13,7 @@ export HIP_RUNTIME=rocclr
 export FC=gfortran
 
 export GFXLIST="${GFX_ARCHS}"
+
+
+export CFLAGS="-fPIC"
+export CXXFLAGS="-fPIC"
