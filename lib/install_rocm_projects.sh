@@ -160,7 +160,7 @@ else
     fi
     [ -d build ] || mkdir build
     cd build
-    run_command ../configure MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
+    run_command ../configure CC=gcc CXX=g++ MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
     --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
     --disable-ld --disable-gas --disable-gdbserver --disable-sim \
     --disable-gdbtk  --disable-gprofng --disable-shared --with-expat --with-system-zlib \
@@ -227,18 +227,17 @@ cmake_install hipFFT -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${R
 cmake_install rocThrust -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
 
-cmake_install hipfort
+cmake_install hipfort -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc  -DHIPFORT_COMPILER=gfortran -DHIPFORT_AR=ar
 
-cmake_install rccl -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+cmake_install rccl -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
      -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
 
 cmake_install atmi -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DLLVM_DIR="${ROCM_INSTALL_DIR}/llvm" -DDEVICE_LIB_DIR=${DEVICE_LIBS} -DATMI_DEVICE_RUNTIME=ON \
     -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
-
-cmake_install rocWMMA -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
-    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DCMAKE_CXX_COMPILER=clang++ -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGET=${GFX_ARCHS}
+cmake_install rocWMMA -DROCWMMA_BUILD_TESTS=OFF -DROCWMMA_BUILD_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
+    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DCMAKE_CXX_COMPILER=clang++ -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGETS=${GFX_ARCHS}
 
 # FIXTHIS WARNING: #pragma message: cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
 # cmake_install MIOpenGEMM

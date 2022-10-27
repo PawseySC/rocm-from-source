@@ -24,4 +24,4 @@ export CXXFLAGS="-fPIC -fPIE"
 export CXX=g++
 export CC=gcc
 export FC=gfortran
-export FCFLAGS="-fPIC -fPIE -v"
+export FCFLAGS="-fPIC -fPIE"
