@@ -6,6 +6,12 @@ INSTALL_DIR="${ROCM_INSTALL_DIR}"
 
 export CPATH="${ROCM_INSTALL_DIR}/rocclr/include/elf:${ROCM_INSTALL_DIR}/include/hsa:$CPATH"
 
+ROCM_BUILD_FOLDER="${BUILD_FOLDER}/rocm"
+[ -e "${ROCM_BUILD_FOLDER}" ] || mkdir - "${ROCM_BUILD_FOLDER}"
+
+OLD_BUILD_FOLDER="${BUILD_FOLDER}"
+BUILD_FOLDER="${ROCM_BUILD_FOLDER}"
+
 cd "${BUILD_FOLDER}"
 if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of software already being do 
     ROCM_VERSION_BRANCH="roc-${ROCM_VERSION%.*}.x"
@@ -22,7 +28,15 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     cd aomp-extras && git checkout rocm-${ROCM_VERSION}
 fi
 
+cd "${BUILD_FOLDER}"
 
+# replace all the hardcoded /opt/rocm in CMake files. Also, disable new tags so that RPATH is used instead of RUNPATH
+if ! [ -e .seddone ]; then
+    find . -name CMakeLists.txt -maxdepth 5 -exec sed -i -e "s|/opt/rocm|${ROCM_INSTALL_DIR}|g" -e "s|--enable-new-dtags| |g" {} \;
+    find . -name "*.cmake" -maxdepth 5 -exec sed -i -e "s|/opt/rocm|${ROCM_INSTALL_DIR}|g" -e  "s|--enable-new-dtags| |g" {} \;
+    touch .seddone
+fi
+export LDFLAGS="${COMPILER_LIBSTDC} ${LDFLAGS}"
 # ====================================================================================================================
 #                                        INSTALLATION PROCESS STARTS HERE
 # ====================================================================================================================
@@ -134,6 +148,8 @@ cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake
     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
 
 # ROCgdb is a bit different
+OLD_LDFLAGS="$LDFLAGS"
+unset LDFLAGS
 run_command cd "${BUILD_FOLDER}/ROCgdb"
 if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
   	echo "Boost already installed. Skipping.."
@@ -144,7 +160,7 @@ else
     fi
     [ -d build ] || mkdir build
     cd build
-    run_command ../configure  MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
+    run_command ../configure MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
     --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
     --disable-ld --disable-gas --disable-gdbserver --disable-sim \
     --disable-gdbtk  --disable-gprofng --disable-shared --with-expat --with-system-zlib \
@@ -153,8 +169,13 @@ else
     run_command make -j $NCORES install
     run_command touch ../rfs_installed
 fi
+export LDFLAGS="$OLDFLAGS"
 
-cmake_install rocm_bandwidth_test  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+# rocm_bandwidth_test does not take into account env variables..
+CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
+sed -i "80 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocm_bandwidth_test/CMakeLists.txt
+cmake_install rocm_bandwidth_test -DCMAKE_CXX_FLAGS="'$CXXFLAGS $LDFLAGS'"  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+
 cmake_install half  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
 SAVE_PYTHONPATH=$PYTHONPATH
@@ -190,8 +211,8 @@ cmake_install hipBLAS -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${
 cmake_install hipSOLVER -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
 
-cmake_install hipSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+cmake_install hipSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+    -DCMAKE_CXX_COMPILER=hipcc -DHIP_PATH=${HIP_PATH} -DROCM_PATH=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS="$GFX_ARCHS"
 
 cmake_install hipCUB -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
@@ -246,3 +267,6 @@ cmake_install rocWMMA -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_T
 # cmake_install MIOpen -DCMAKE_PREFIX_PATH=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 #     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=clang++\
 #     -DMIOPEN_USE_MIOPENGEMM=ON
+
+
+BUILD_FOLDER="${OLD_BUILD_FOLDER}"

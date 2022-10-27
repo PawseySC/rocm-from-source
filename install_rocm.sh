@@ -10,8 +10,9 @@
 
 # Locations for ROCm binaries and its dependencies' binaries differ so that you can rebuild only ROCm
 # without having to rebuild dependencies, when it is not needed.
+. /group/pawsey0001/cdipietrantonio/mulan-stuff/env.sh
 
-ROOT_INSTALL_DIR=/opt/rocm
+ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm
 
 if [ -z ${ROOT_INSTALL_DIR+x} ]; then
     echo "You must set the ROOT_INSTALL_DIR environment variable to the path where to install ROCm."
@@ -19,7 +20,7 @@ if [ -z ${ROOT_INSTALL_DIR+x} ]; then
 fi
 
 # Default: 1 if [ -d /opt/cray ], 0 otherwise.
-# INSTALL_ON_SUPERCOMPUTER= 
+INSTALL_ON_SUPERCOMPUTER=1 
 
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
@@ -38,22 +39,25 @@ BUILD_TYPE=Release
 # Usually you shouldn't modify the following section.
 # ============================================================================================================
 
+# If you have multiple libstdc++.so files on your system and you intend to use a non-default compiler with its own
+# libstdc++ ro compile ROCm, then set the following variable to the path to the "lib" or "lib64" directory of 
+# the compiler you intend to use.
+COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/lib64
+
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
 ROCM_VERSION=5.3.0
 # Pawsey build script revision
-SCRIPT_REVISION=0
-# The script will build CMake if an appropriate version ( >= 3.23 ) is not found.
-CMAKE_VERSION=3.24.2
+SCRIPT_REVISION=2
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
-export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
+export ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
 
 MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
-if [ -d $ROCM_DEPS_INSTALL_DIR ]; then
+if [ -e "${PROCM_DEPS_INSTALL_DIR}/.completed" ]; then
     echo "ROCm dependencies' installation directory already exists. Not building dependencies.."
     BUILD_ROCM_DEPS=0
 else
@@ -96,10 +100,10 @@ fi
 
 
 if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
-
-    run_command module purge
-    run_command module load gcc/10.3.0
-    run_command module load cray-python cray-dsmml
+    continue
+    # run_command module purge
+    # run_command module load gcc/10.3.0
+    # run_command module load cray-python cray-dsmml
 
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 

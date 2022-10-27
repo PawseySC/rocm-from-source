@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/shDepende
 
 # Install all the dependencies needed to build ROCm.
 if [ -z ${ROCM_DEPS_INSTALL_DIR+x} ] || [ -z ${BUILD_FOLDER+x} ]; then
@@ -6,7 +6,13 @@ if [ -z ${ROCM_DEPS_INSTALL_DIR+x} ] || [ -z ${BUILD_FOLDER+x} ]; then
     exit 1
 fi
 INSTALL_DIR="${ROCM_DEPS_INSTALL_DIR}"
-cd "${BUILD_FOLDER}"
+ROCM_DEPS_BUILD_FOLDER="${BUILD_FOLDER}/rocm-deps"
+[ -e "${ROCM_DEPS_BUILD_FOLDER}" ] || mkdir -p "${ROCM_DEPS_BUILD_FOLDER}"
+
+OLD_BUILD_FOLDER="${BUILD_FOLDER}"
+BUILD_FOLDER="${ROCM_DEPS_BUILD_FOLDER}"
+cd "${ROCM_DEPS_BUILD_FOLDER}"
+
 # ===============================================================================================
 #                                       libX11
 # ===============================================================================================
@@ -182,3 +188,5 @@ get_aqlprofiler() {
 }
 
 get_aqlprofiler
+run_command touch "${INSTALL_DIR}/.completed"
+BUILD_FOLDER="${OLD_BUILD_FOLDER}"

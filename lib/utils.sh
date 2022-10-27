@@ -15,8 +15,7 @@ export_vars () {
     export ACLOCAL_PATH=$1/share/aclocal:${ACLOCAL_PATH%:}
     export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
     # the following is needed for compilation purposes
-    #export CFLAGS="$CFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
-    #export CXXFLAGS="$CXXFLAGS -Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64"
+    export LDFLAGS="-Wl,--disable-new-dtags,-rpath=$1/lib -Wl,--disable-new-dtags,-rpath=$1/lib64 $LDFLAGS"
 }
 
 
@@ -40,15 +39,14 @@ run_command () {
 
 # Executes a cmake installation of the project specified as first argument, optionally using the cmake
 # flags passed as further arguments.
-# TODO: enable rpaths using -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON 
 cmake_install () {
     run_command cd "${BUILD_FOLDER}"
     PACKAGE_NAME="$1"
     SOURCE_DIR=".."
     if [ $# -eq 1 ]; then
-        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+        CMAKE_FLAGS="-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
     else
-        CMAKE_FLAGS=""
+        CMAKE_FLAGS="-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"
         narg=0
         for arg in $@;
         do

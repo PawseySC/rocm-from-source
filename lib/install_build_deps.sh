@@ -3,10 +3,14 @@
 # ============================================================================================================
 
 BUILD_DEPS_FOLDER="${BUILD_FOLDER}/build-deps"
-cd ${BUILD_FOLDER}
 
 [ -d "${BUILD_DEPS_FOLDER}/bin" ] || mkdir -p "${BUILD_DEPS_FOLDER}/bin"
 export_vars "${BUILD_DEPS_FOLDER}"
+
+OLD_BUILD_FOLDER="${BUILD_FOLDER}"
+BUILD_FOLDER="${BUILD_DEPS_FOLDER}"
+
+cd ${BUILD_FOLDER}
 
 # we need opengl headers
 [ -e mesa ] || run_command git clone https://github.com/anholt/mesa.git
@@ -30,13 +34,14 @@ if [ $PROGRAM_EXISTS -eq 0 ]; then
 fi
 
 # Always use the latest cmake. ROCm depends heavily on latest CMake features, including HIP support.
+CMAKE_VERSION=3.24.2
 program_exists cmake
 CMAKE_AVAIL=0
 if [ "$PROGRAM_EXISTS" = "1" ]; then 
     CMAKE_AVAIL=$(VER=`cmake --version | grep -oE "([0-9]+\.[0-9]+)"` && echo "$VER 3.23" | awk '{if ($1 >= $2) print 1; else print 0}')
     if [ $? -ne 0 ]; then
-        echo "Error while retrieving the cmake version."
-        exit 1
+        echo "Error while retrieving the cmake version, building from scratch."
+        CMAKE_AVAIL=0
     fi
 fi
 
@@ -62,3 +67,5 @@ fi
 export PATH=${BUILD_DEPS_FOLDER}/pypackages/bin:$PATH
 export PYTHONPATH=${BUILD_DEPS_FOLDER}/pypackages/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 run_command pip3 install --prefix=${BUILD_DEPS_FOLDER}/pypackages cppheaderparser argparse virtualenv wheel lit
+
+BUILD_FOLDER="${OLD_BUILD_FOLDER}"
