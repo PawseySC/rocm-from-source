@@ -15,7 +15,7 @@ export_vars () {
     export ACLOCAL_PATH=$1/share/aclocal:${ACLOCAL_PATH%:}
     export PKG_CONFIG_PATH=$1/lib/pkgconfig:$1/lib64/pkgconfig:$1/share/pkgconfig:${PKG_CONFIG_PATH%:}
     # the following is needed for compilation purposes
-    export LDFLAGS="-Wl,--disable-new-dtags,-rpath=$1/lib -Wl,--disable-new-dtags,-rpath=$1/lib64 $LDFLAGS"
+    export LDFLAGS="-Wl,-rpath=$1/lib -Wl,-rpath=$1/lib64 $LDFLAGS"
 }
 
 

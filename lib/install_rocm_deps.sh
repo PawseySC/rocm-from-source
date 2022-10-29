@@ -1,4 +1,4 @@
-#!/bin/shDepende
+#!/bin/sh
 
 # Install all the dependencies needed to build ROCm.
 if [ -z ${ROCM_DEPS_INSTALL_DIR+x} ] || [ -z ${BUILD_FOLDER+x} ]; then
@@ -43,7 +43,18 @@ else
 fi
 autoreconf_build https://www.x.org/releases/individual/lib/libX11-1.6.8.tar.gz
 
+
+# -----------------------------------------------------------------------------------------------
+#                                          libffi
+# -----------------------------------------------------------------------------------------------
 configure_build https://github.com/libffi/libffi/releases/download/v3.4.3/libffi-3.4.3.tar.gz 
+
+# -----------------------------------------------------------------------------------------------
+#                                   OpenGL & OpenCL headers
+# -----------------------------------------------------------------------------------------------
+[ -e mesa ] || run_command git clone https://github.com/anholt/mesa.git
+export_vars "${BUILD_FOLDER}/mesa"
+
 # -----------------------------------------------------------------------------------------------
 #                                    msgpack & fmt
 # -----------------------------------------------------------------------------------------------
@@ -131,7 +142,7 @@ if [ -e rfs_installed ] &&  [ ${SKIP_INSTALLED} -eq 1 ]; then
 else
     run_command git checkout elfutils-0.187
     run_command autoreconf -i -f
-    run_command ./configure --enable-maintainer-mode --disable-libdebuginfod --disable-debuginfod --prefix="${INSTALL_DIR}"
+    run_command ./configure LDFLAGS='' CFLAGS="" CXXFLAGS="" --enable-maintainer-mode --disable-libdebuginfod --disable-debuginfod --prefix="${INSTALL_DIR}"
     run_command make -j $NCORES install
     run_command touch "rfs_installed"
 fi

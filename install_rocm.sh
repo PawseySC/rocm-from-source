@@ -12,7 +12,7 @@
 # without having to rebuild dependencies, when it is not needed.
 . /group/pawsey0001/cdipietrantonio/mulan-stuff/env.sh
 
-ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm
+ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm3
 
 if [ -z ${ROOT_INSTALL_DIR+x} ]; then
     echo "You must set the ROOT_INSTALL_DIR environment variable to the path where to install ROCm."
@@ -28,7 +28,7 @@ INSTALL_ON_SUPERCOMPUTER=1
 GFX_ARCHS="gfx908;gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=`pwd`/build
+BUILD_FOLDER=`pwd`/build4
 
 BUILD_TYPE=Release
 
@@ -57,12 +57,13 @@ MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
 
 # Install ROCm dependencies? Might not be needed if they are already installed (from a previous build).
-if [ -e "${PROCM_DEPS_INSTALL_DIR}/.completed" ]; then
+if [ -e "${ROCM_DEPS_INSTALL_DIR}/.completed" ]; then
     echo "ROCm dependencies' installation directory already exists. Not building dependencies.."
     BUILD_ROCM_DEPS=0
 else
     BUILD_ROCM_DEPS=1
 fi
+BUILD_ROCM_DEPS=1
 
 # If set to 1, previous builds of each project, if any, are deleted before proceeding with a new build.
 CLEAN_BUILD=0

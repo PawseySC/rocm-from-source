@@ -9,12 +9,9 @@ export_vars "${BUILD_DEPS_FOLDER}"
 
 OLD_BUILD_FOLDER="${BUILD_FOLDER}"
 BUILD_FOLDER="${BUILD_DEPS_FOLDER}"
+INSTALL_DIR="$BUILD_DEPS_FOLDER"
 
 cd ${BUILD_FOLDER}
-
-# we need opengl headers
-[ -e mesa ] || run_command git clone https://github.com/anholt/mesa.git
-export_vars "${BUILD_DEPS_FOLDER}/mesa"
 
 # we need "python" and "pip" executables
 [ -e ${BUILD_DEPS_FOLDER}/bin/python ] || \
@@ -51,10 +48,7 @@ exit 0" > ${BUILD_DEPS_FOLDER}/bin/makeinfo
 run_command chmod 0777  ${BUILD_DEPS_FOLDER}/bin/makeinfo
 
 if [ "$CMAKE_AVAIL" = "0" ]; then
-    wget_untar_cd "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
-    run_command ./configure --prefix="${BUILD_DEPS_FOLDER}"
-    run_command make -j $NCORES
-    run_command make install
+    configure_build "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
 else
     echo "A suitable version of CMake is present, no need to build it from source."
 fi

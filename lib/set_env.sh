@@ -15,13 +15,15 @@ export_vars "${ROCM_DEPS_INSTALL_DIR}"
 
 # LLVM OpenMP offloading will always use the system paths first to search for libraries. If you have your own compiler
 # with your own libstdc++, make sure to add it in LDFLAGS.
-if [ -z ${COMPILER_LIBDIR+x} ]; then
-    COMPILER_LIBSTDC="-L${COMPILER_LIBDIR} -Wl,--disable-new-dtags,-rpath=${COMPILER_LIBDIR}"
+if [ -n ${COMPILER_LIBDIR} ]; then
+    echo "Adding compiler library path to LDFLAGS.."
+    LDFLAGS="-L${COMPILER_LIBDIR} -Wl,-rpath=${COMPILER_LIBDIR} $LDFLAGS"
 fi
-
-export CFLAGS="-fPIC -fPIE"
-export CXXFLAGS="-fPIC -fPIE"
+export LDFLAGS="-Wl,--disable-new-dtags $LDFLAGS"
+# -fPIE gives issue with libffi + llvm_project/openmp
+export CFLAGS="-fPIC"
+export CXXFLAGS="-fPIC"
 export CXX=g++
 export CC=gcc
 export FC=gfortran
-export FCFLAGS="-fPIC -fPIE"
+export FCFLAGS="-fPIC"
