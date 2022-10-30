@@ -148,28 +148,25 @@ cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake
     -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
 
 # ROCgdb is a bit different
-# OLD_LDFLAGS="$LDFLAGS"
-# unset LDFLAGS
-# run_command cd "${BUILD_FOLDER}/ROCgdb"
-# if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
-#   	echo "Boost already installed. Skipping.."
-# else
-#     if [ -d build ] && [ $CLEAN_BUILD -eq 1 ]; then
-#         echo "Cleaning build directory.."
-#         run_command rm -rf build;
-#     fi
-#     [ -d build ] || mkdir build
-#     cd build
-#     run_command ../configure CC=gcc CXX=g++ MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
-#     --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
-#     --disable-ld --disable-gas --disable-gdbserver --disable-sim \
-#     --disable-gdbtk  --disable-gprofng --disable-shared --with-expat --with-system-zlib \
-#     --without-guile --with-rocm-dbgapi="${ROCM_INSTALL_DIR}" 
-#     run_command make -j $NCORES
-#     run_command make -j $NCORES install
-#     run_command touch ../rfs_installed
-# fi
-# export LDFLAGS="$OLDFLAGS"
+run_command cd "${BUILD_FOLDER}/ROCgdb"
+if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
+  	echo "Boost already installed. Skipping.."
+else
+    if [ -d build ] && [ $CLEAN_BUILD -eq 1 ]; then
+        echo "Cleaning build directory.."
+        run_command rm -rf build;
+    fi
+    [ -d build ] || mkdir build
+    cd build
+    run_command ../configure CC=gcc CXX=g++ CXXFLAGS='' CFLAGS='' LDFLAGS='' MAKEINFO=false --program-prefix=roc --prefix="${ROCM_INSTALL_DIR}" \
+    --enable-64-bit-bfd --enable-targets="x86_64-linux-gnu,amdgcn-amd-amdhsa" \
+    --disable-ld --disable-gas --disable-gdbserver --disable-sim \
+    --disable-gdbtk  --disable-gprofng --disable-shared --with-expat --with-system-zlib \
+    --without-guile --with-rocm-dbgapi="${ROCM_INSTALL_DIR}" 
+    run_command make -j $NCORES
+    run_command make -j $NCORES install
+    run_command touch ../rfs_installed
+fi
 
 # rocm_bandwidth_test does not take into account env variables..
 CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"

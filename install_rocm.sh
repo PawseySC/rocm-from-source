@@ -12,7 +12,7 @@
 # without having to rebuild dependencies, when it is not needed.
 . /group/pawsey0001/cdipietrantonio/mulan-stuff/env.sh
 
-ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm3
+ROOT_INSTALL_DIR=/group/pawsey0001/cdipietrantonio/mulan-stuff/rocm-mulan
 
 if [ -z ${ROOT_INSTALL_DIR+x} ]; then
     echo "You must set the ROOT_INSTALL_DIR environment variable to the path where to install ROCm."
@@ -24,11 +24,10 @@ INSTALL_ON_SUPERCOMPUTER=1
 
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
-# try: gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+
 GFX_ARCHS="gfx908;gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=`pwd`/build4
+BUILD_FOLDER=`pwd`/build-mulan
 
 BUILD_TYPE=Release
 
@@ -42,7 +41,7 @@ BUILD_TYPE=Release
 # If you have multiple libstdc++.so files on your system and you intend to use a non-default compiler with its own
 # libstdc++ ro compile ROCm, then set the following variable to the path to the "lib" or "lib64" directory of 
 # the compiler you intend to use.
-COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/lib64
+COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/11.1.0/lib64
 
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
 ROCM_VERSION=5.3.0
