@@ -15,7 +15,7 @@ export_vars "${ROCM_DEPS_INSTALL_DIR}"
 
 # LLVM OpenMP offloading will always use the system paths first to search for libraries. If you have your own compiler
 # with your own libstdc++, make sure to add it in LDFLAGS.
-if [ -n ${COMPILER_LIBDIR} ]; then
+if [ -n "${COMPILER_LIBDIR}" ]; then
     echo "Adding compiler library path to LDFLAGS.."
     LDFLAGS="-L${COMPILER_LIBDIR} -Wl,-rpath=${COMPILER_LIBDIR} $LDFLAGS"
 fi

@@ -111,7 +111,7 @@ cmake_install ROCm-OpenCL-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DUSE_COMGR
 run_command cd "${ROCM_INSTALL_DIR}/bin"
 run_command mv rocm_agent_enumerator rocm_agent_enumerator.old
 echo "#!/bin/bash" > rocm_agent_enumerator
-for gfx in ${GFX_ARCHS//;/ }
+for gfx in `echo ${GFX_ARCHS} | tr \; " "`;
 do
     echo "echo $gfx" >> rocm_agent_enumerator
 done
