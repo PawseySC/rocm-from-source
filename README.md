@@ -4,8 +4,6 @@ A set of `sh` scripts whose objective is to install the AMD ROCm programming fra
 
 Maintainer: Cristian Di Pietrantonio.
 
-**NOTE:** this is just an internal project for now, do not share outside as it has not been tested. For any information, contact Cristian.
-
 ## Why?
 
 While you can install precompiled binaries of ROCm on a workstation with the help of a packet manager, it is not desirable to do on a supercomputing infrastructure. Here is a list of reasons:
@@ -24,8 +22,6 @@ Each release of `rocm-from-source` is tagged with `rocm-{X}.{Y}.{Z}rev{R}`, wher
 - `R` is the revision number of the build scripts for a given ROCm version. It is increased each time a inmproved build process of the same ROCm release is made public.
 
 ## Instructions
-
-**NOTE:** Start the installation from a clean state, if possible. That is, make sure that ROCm is not installed systemwide (under `/usr/bin`, `/bin`), and that is a "hard no", nor under the default ROCm paths `/opt/rocm/rocm-xxx`, if possible. Those installations will interfere with the build process.
 
 ROCm meeds the `amdgpu` kernel module to work. Cray systems shipping with AMD GPUs will have it already installed. If this is not the case for your system, you can install the kernel module by following the instructions in [KernelModule.md](docs/KernelModule.md).
 

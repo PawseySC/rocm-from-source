@@ -36,11 +36,6 @@ BUILD_TYPE=Release
 # Usually you shouldn't modify the following section.
 # ============================================================================================================
 
-# If you have multiple libstdc++.so files on your system and you intend to use a non-default compiler with its own
-# libstdc++ ro compile ROCm, then set the following variable to the path to the "lib" or "lib64" directory of 
-# the compiler you intend to use.
-# COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/11.1.0/lib64
-
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
 ROCM_VERSION=5.3.0
 # Pawsey build script revision
@@ -97,10 +92,15 @@ fi
 
 
 if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
-    continue
-    # run_command module purge
-    # run_command module load gcc/10.3.0
-    # run_command module load cray-python cray-dsmml
+
+    # If you have multiple libstdc++.so files on your system and you intend to use a non-default compiler with its own
+    # libstdc++ ro compile ROCm, then set the following variable to the path to the "lib" or "lib64" directory of 
+    # the compiler you intend to use.
+    #
+    # COMPILER_LIBDIR=
+    #
+    module load PrgEnv-gnu
+    COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
 
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 
