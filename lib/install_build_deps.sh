@@ -18,7 +18,9 @@ cd ${BUILD_FOLDER}
     run_command ln -s `which python3` ${BUILD_DEPS_FOLDER}/bin/python;
 [ -e ${BUILD_DEPS_FOLDER}/bin/pip ] || \
     run_command ln -s `which pip3` ${BUILD_DEPS_FOLDER}/bin/pip;
-
+if [ ${INSTALL_ON_SUPERCOMPUTER} -eq 1 ] && ! [ -e ${BUILD_DEPS_FOLDER}/bin/gcc ]; then
+   run_command ln -s "${COMPILER_BINDIR}/gcc" "${BUILD_DEPS_FOLDER}/bin/gcc";
+fi
 # Install git-lfs if needed
 program_exists git-lfs
 
@@ -60,6 +62,9 @@ fi
 
 export PATH=${BUILD_DEPS_FOLDER}/pypackages/bin:$PATH
 export PYTHONPATH=${BUILD_DEPS_FOLDER}/pypackages/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
-run_command pip3 install --prefix=${BUILD_DEPS_FOLDER}/pypackages cppheaderparser argparse virtualenv wheel lit
-
+python3 -c 'import CppHeaderParser'
+PYPACKAGES_INSTALLED=$?
+if [ ${PYPACKAGES_INSTALLED} -ne 0 ]; then
+    run_command pip3 install --prefix=${BUILD_DEPS_FOLDER}/pypackages cppheaderparser argparse virtualenv wheel lit
+fi
 BUILD_FOLDER="${OLD_BUILD_FOLDER}"

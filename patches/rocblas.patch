@@ -1,0 +1,24 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 309a0528..4391d80d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -160,17 +160,16 @@ if(NOT SKIP_LIBRARY)
+ 
+     set( Tensile_TEST_LOCAL_PATH "" CACHE PATH "Use local Tensile directory instead of fetching a GitHub branch" )
+ 
+-    include(virtualenv)
+ 
+     if (Tensile_TEST_LOCAL_PATH)
+-      virtualenv_install(${Tensile_TEST_LOCAL_PATH})
++	    execute_process(RESULT_VARIABLE rc COMMAND pip3 install --prefix=$ENV{ROCM_INSTALL_DIR} ${Tensile_TEST_LOCAL_PATH})
+       message (STATUS "using local Tensile from ${Tensile_TEST_LOCAL_PATH}, copied to ${Tensile_ROOT}")
+     else()
+       # Use the virtual-env setup and download package from specified repot:
+       set( tensile_fork "ROCmSoftwarePlatform" CACHE STRING "Tensile fork to use" )
+       file (STRINGS "tensile_tag.txt" read_tensile_tag)
+       set( tensile_tag ${read_tensile_tag} CACHE STRING "Tensile tag to download" )
+-      virtualenv_install("git+https://github.com/${tensile_fork}/Tensile.git@${tensile_tag}")
++      execute_process(RESULT_VARIABLE rc COMMAND pip3 install --prefix=$ENV{ROCM_INSTALL_DIR} "git+https://github.com/${tensile_fork}/Tensile.git@${tensile_tag}")
+       message (STATUS "using GIT Tensile fork=${tensile_fork} from branch=${tensile_tag}")
+     endif()
+     message(STATUS "Adding ${VIRTUALENV_HOME_DIR} to CMAKE_PREFIX_PATH")

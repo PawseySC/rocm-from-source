@@ -1,0 +1,12 @@
+diff --git a/src/roctx/roctx.cpp b/src/roctx/roctx.cpp
+index c7baf57..0a16ccf 100644
+--- a/src/roctx/roctx.cpp
++++ b/src/roctx/roctx.cpp
+@@ -88,6 +88,6 @@ ROCTX_API void roctxRangeStop(roctx_range_id_t range_id) {
+ }
+ 
+ extern "C" ROCTX_EXPORT void roctxRegisterTracerCallback(const void* function) {
+-  report_activity.store(reinterpret_cast<decltype(report_activity.load())>(function),
++  report_activity.store(reinterpret_cast<decltype(report_activity.load())>(const_cast<void*>(function)),
+                         std::memory_order_relaxed);
+ }

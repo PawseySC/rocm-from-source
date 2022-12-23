@@ -17,7 +17,8 @@ export_vars "${ROCM_INSTALL_DIR}/hip"
 export_vars "${ROCM_INSTALL_DIR}"
 export_vars "${ROCM_DEPS_INSTALL_DIR}"
 
-
+echo "prepend_path(\"PYTHONPATH\", \"${ROCM_INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages\")"
+echo "prepend_path(\"PYTHONPATH\", \"${ROCM_DEPS_INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages\")"
 echo "setenv(\"HIP_PATH\", \"${ROCM_INSTALL_DIR}/hip\")"
 echo "setenv(\"HSA_PATH\", \"${ROCM_INSTALL_DIR}/hsa\")"
 echo "setenv(\"HIP_CLANG_PATH\", \"${ROCM_INSTALL_DIR}/llvm/bin\")"

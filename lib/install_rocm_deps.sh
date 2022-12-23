@@ -69,6 +69,9 @@ cmake_install msgpack-c -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=
 cmake_install fmt -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DCMAKE_CXX_FLAGS=-fPIC
 
+# now that we have msgpack, we can install all the others
+run_command pip3 install --prefix=${INSTALL_DIR} msgpack pyaml
+
 # -----------------------------------------------------------------------------------------------
 #                                    libdrm
 # -----------------------------------------------------------------------------------------------

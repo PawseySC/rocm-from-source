@@ -16,7 +16,8 @@ export_vars "${ROCM_INSTALL_DIR}/hip"
 export_vars "${ROCM_INSTALL_DIR}"
 export_vars "${ROCM_DEPS_INSTALL_DIR}"
 
-
+echo "export PYTHONPATH=${ROCM_INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH"
+echo "export PYTHONPATH=${ROCM_DEPS_INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH"
 echo "export HIP_PATH=${ROCM_INSTALL_DIR}/hip"
 echo "export HSA_PATH=${ROCM_INSTALL_DIR}/hsa"
 echo "export HIP_CLANG_PATH=${ROCM_INSTALL_DIR}/llvm/bin"

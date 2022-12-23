@@ -43,7 +43,7 @@ SCRIPT_REVISION=2
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
-export ROCM_DEPS_INSTALL_DIR="${ROCM_INSTALL_DIR}/rocm-deps"
+export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
 
 MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
@@ -74,6 +74,8 @@ echo "Running the build with $NCORES cores.."
 # ************************************************************************************************************
 
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PATCHES_DIR="${SCRIPT_DIR}/patches"
+
 . "${SCRIPT_DIR}/lib/utils.sh"
 # We supports several OSes. For each one we adopt a different technique TODO: continue.
 OS_NAME=`cat /etc/os-release | grep -E "^NAME" | cut -d'"' -f2`
@@ -100,8 +102,10 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     # COMPILER_LIBDIR=
     #
     module load PrgEnv-gnu
+    module load cray-python
     COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
-
+    COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
+    
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 
     run_command apt install -y build-essential python3.8-dev gfortran libnuma-dev libudev-dev xxd libudev-dev \
