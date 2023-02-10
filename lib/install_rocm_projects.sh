@@ -18,7 +18,7 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     echo "Downloading ROCM repositories at branch ${ROCM_VERSION_BRANCH}"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b ${ROCM_VERSION_BRANCH}
     run_command repo sync
-    run_command git clone -b release/rocm-rel-5.0 https://github.com/ROCmSoftwarePlatform/hipRAND.git
+    run_command git clone -b rocm-5.4.2 https://github.com/ROCmSoftwarePlatform/hipRAND.git
     # Needed for MIOpen
     # TODO: the following needs some updating
     # run_command git clone -b release/rocm-5.1 https://github.com/ROCmSoftwarePlatform/llvm-project-mlir.git
@@ -36,7 +36,12 @@ if ! [ -e .seddone ]; then
 fi
 
 # Apply patches
-patch "${BUILD_FOLDER}/roctracer/src/roctx/roctx.cpp" "${PATCHES_DIR}/roctracer.patch"
+if ! [ -e "${BUILD_FOLDER}/roctracer/.patched" ]; then
+    patch "${BUILD_FOLDER}/roctracer/src/roctx/roctx.cpp" "${PATCHES_DIR}/roctracer.patch"
+    patch "${BUILD_FOLDER}/llvm-project/openmp/libomptarget/src/CMakeLists.txt" "${PATCHES_DIR}/llvm-openmp.patch"
+    patch "${BUILD_FOLDER}/hipamd/src/hip_intercept.cpp" "${PATCHES_DIR}/hipamd.patch"
+    touch "${BUILD_FOLDER}/roctracer/.patched"
+fi
 # ====================================================================================================================
 #                                        INSTALLATION PROCESS STARTS HERE
 # ====================================================================================================================
@@ -67,6 +72,17 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
 
 # Install AMD ROCm flang
 COMP_INC_DIR=${BUILD_FOLDER}/flang/runtime/libpgmath/lib/common
+export CPATH="$COMP_INC_DIR:$CPATH"
+cmake_install flang/runtime/libpgmath\
+       -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
+       -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang \
+       -DCMAKE_Fortran_COMPILER=gfortran \
+       -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
+       -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
+       -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
+       -DFLANG_INCLUDE_TESTS=OFF
+
+
 cmake_install flang -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
     -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang \
@@ -78,16 +94,6 @@ cmake_install flang -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE="${BUILD_TYPE
     -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
     -DFLANG_INCLUDE_TESTS=OFF\
     -DCMAKE_C_FLAGS=-I$COMP_INC_DIR -DCMAKE_CXX_FLAGS=-I$COMP_INC_DIR
-
-cmake_install flang/runtime/libpgmath\
-	-DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
-       -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang \
-       -DCMAKE_Fortran_COMPILER=gfortran \
-       -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
-       -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
-       -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
-       -DFLANG_INCLUDE_TESTS=OFF\
-       -DCMAKE_C_FLAGS=-I$COMP_INC_DIR -DCMAKE_CXX_FLAGS=-I$COMP_INC_DIR
 
 # flang runtime
 cmake_install flang -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
@@ -198,19 +204,24 @@ else
 fi
 
 # rocm_bandwidth_test does not take into account env variables..
-CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
-sed -i "80 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocm_bandwidth_test/CMakeLists.txt
+if ! [ -e "${BUILD_FOLDER}/rocm_bandwidth_test/.patched" ]; then
+    CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
+    sed -i "82 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocm_bandwidth_test/CMakeLists.txt
+    touch "${BUILD_FOLDER}/rocm_bandwidth_test/.patched" 
+fi
 cmake_install rocm_bandwidth_test -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
 cmake_install half  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
 
-#SAVE_PYTHONPATH=$PYTHONPATH
-#unset PYTHONPATH
+if ! [ -e "${BUILD_FOLDER}/rocBLAS/.patched" ]; then
+    CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
+    sed -i "34 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocBLAS/CMakeLists.txt
+    touch "${BUILD_FOLDER}/rocBLAS/.patched" 
+fi
 cmake_install rocBLAS -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR};" \
      -DRUN_HEADER_TESTING=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_COMPILER=hipcc\
      -DTensile_CODE_OBJECT_VERSION=V3 -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS="$GFX_ARCHS" \
      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_FILE_REORG_BACKWARD_COMPATIBILITY=ON -DTensile_TEST_LOCAL_PATH=${BUILD_FOLDER}/Tensile  -DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake
-#export PYTHONPATH=$SAVE_PYTHONPATH
 
 cmake_install rocRAND -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=hipcc -DBUILD_HIPRAND=OFF

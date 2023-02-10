@@ -18,7 +18,7 @@ if [ -z ${ROOT_INSTALL_DIR+x} ]; then
 fi
 
 # Default: 1 if [ -d /opt/cray ], 0 otherwise.
-# INSTALL_ON_SUPERCOMPUTER= 
+INSTALL_ON_SUPERCOMPUTER=1 
 
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
@@ -29,6 +29,7 @@ BUILD_FOLDER=`pwd`/build
 
 BUILD_TYPE=Release
 
+source /pawsey/mulan/rocm/modulefiles/python/setup.sh
 
 # ============================================================================================================
 #                                        ADVANCED PARAMETERS
@@ -37,9 +38,9 @@ BUILD_TYPE=Release
 # ============================================================================================================
 
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
-ROCM_VERSION=5.3.0
+ROCM_VERSION=5.4.3
 # Pawsey build script revision
-SCRIPT_REVISION=2
+SCRIPT_REVISION=0
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
@@ -55,7 +56,6 @@ if [ -e "${ROCM_DEPS_INSTALL_DIR}/.completed" ]; then
 else
     BUILD_ROCM_DEPS=1
 fi
-
 # If set to 1, previous builds of each project, if any, are deleted before proceeding with a new build.
 CLEAN_BUILD=0
 # Do not call cmake/make on packages already installed (uses a sentinel file, `rfs_installed`, 
@@ -101,10 +101,10 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     # COMPILER_LIBDIR=
     #
-    module load PrgEnv-gnu
-    module load cray-python
-    COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
-    COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
+    # module load gcc/10.3.0
+    # module load cray-python
+    COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/lib64 # $( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
+    COMPILER_BINDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/bin #$( cd $(dirname `which gcc`)/../snos/bin && pwd)
     
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 

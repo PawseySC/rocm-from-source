@@ -18,7 +18,7 @@ cd ${BUILD_FOLDER}
     run_command ln -s `which python3` ${BUILD_DEPS_FOLDER}/bin/python;
 [ -e ${BUILD_DEPS_FOLDER}/bin/pip ] || \
     run_command ln -s `which pip3` ${BUILD_DEPS_FOLDER}/bin/pip;
-if [ ${INSTALL_ON_SUPERCOMPUTER} -eq 1 ] && ! [ -e ${BUILD_DEPS_FOLDER}/bin/gcc ]; then
+if [ "${COMPILER_BINDIR+x}" = "x" ] && [ ${INSTALL_ON_SUPERCOMPUTER} -eq 1 ] && ! [ -e ${BUILD_DEPS_FOLDER}/bin/gcc ]; then
    run_command ln -s "${COMPILER_BINDIR}/gcc" "${BUILD_DEPS_FOLDER}/bin/gcc";
 fi
 # Install git-lfs if needed

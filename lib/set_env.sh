@@ -19,7 +19,7 @@ if [ -n "${COMPILER_LIBDIR}" ]; then
     echo "Adding compiler library path to LDFLAGS.."
     LDFLAGS="-L${COMPILER_LIBDIR} -Wl,-rpath=${COMPILER_LIBDIR} $LDFLAGS"
 fi
-export LDFLAGS="-Wl,--disable-new-dtags $LDFLAGS"
+export LDFLAGS="-fPIC -Wl,--disable-new-dtags $LDFLAGS"
 # -fPIE gives issue with libffi + llvm_project/openmp
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
