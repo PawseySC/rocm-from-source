@@ -218,6 +218,8 @@ if ! [ -e "${BUILD_FOLDER}/rocBLAS/.patched" ]; then
     sed -i "34 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocBLAS/CMakeLists.txt
     touch "${BUILD_FOLDER}/rocBLAS/.patched" 
 fi
+
+export PYTHONPATH=${BUILD_FOLDER}/rocBLAS/build/virtualenv/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 cmake_install rocBLAS -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR};" \
      -DRUN_HEADER_TESTING=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_COMPILER=hipcc\
      -DTensile_CODE_OBJECT_VERSION=V3 -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS="$GFX_ARCHS" \
