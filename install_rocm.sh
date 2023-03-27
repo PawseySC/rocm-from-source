@@ -25,11 +25,9 @@ INSTALL_ON_SUPERCOMPUTER=1
 GFX_ARCHS="gfx908;gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=`pwd`/build
+BUILD_FOLDER=${MYSCRATCH}/rocm-build
 
 BUILD_TYPE=Release
-
-source /pawsey/mulan/rocm/modulefiles/python/setup.sh
 
 # ============================================================================================================
 #                                        ADVANCED PARAMETERS
@@ -101,10 +99,10 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     # COMPILER_LIBDIR=
     #
-    # module load gcc/10.3.0
-    # module load cray-python
-    COMPILER_LIBDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/lib64 # $( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
-    COMPILER_BINDIR=/pawsey/mulan/raw-builds/GCC/12.0.0/bin #$( cd $(dirname `which gcc`)/../snos/bin && pwd)
+    module load gcc/12.1.0
+    module load cray-python
+    COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
+    COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
     
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 

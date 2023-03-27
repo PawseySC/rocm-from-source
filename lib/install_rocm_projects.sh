@@ -18,7 +18,7 @@ if ! [ -d hipamd ]; then # use the 'hipamd' folder presence as a flag of softwar
     echo "Downloading ROCM repositories at branch ${ROCM_VERSION_BRANCH}"
     run_command repo init -u https://github.com/RadeonOpenCompute/ROCm.git -b ${ROCM_VERSION_BRANCH}
     run_command repo sync
-    run_command git clone -b rocm-5.4.2 https://github.com/ROCmSoftwarePlatform/hipRAND.git
+    run_command git clone -b rocm-${ROCM_VERSION} https://github.com/ROCmSoftwarePlatform/hipRAND.git
     # Needed for MIOpen
     # TODO: the following needs some updating
     # run_command git clone -b release/rocm-5.1 https://github.com/ROCmSoftwarePlatform/llvm-project-mlir.git
@@ -40,6 +40,7 @@ if ! [ -e "${BUILD_FOLDER}/roctracer/.patched" ]; then
     patch "${BUILD_FOLDER}/roctracer/src/roctx/roctx.cpp" "${PATCHES_DIR}/roctracer.patch"
     patch "${BUILD_FOLDER}/llvm-project/openmp/libomptarget/src/CMakeLists.txt" "${PATCHES_DIR}/llvm-openmp.patch"
     patch "${BUILD_FOLDER}/hipamd/src/hip_intercept.cpp" "${PATCHES_DIR}/hipamd.patch"
+    patch "${BUILD_FOLDER}/HIPIFY/CMakeLists.txt" "${PATCHES_DIR}/hipify.patch"
     touch "${BUILD_FOLDER}/roctracer/.patched"
 fi
 # ====================================================================================================================
