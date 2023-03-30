@@ -22,10 +22,10 @@ INSTALL_ON_SUPERCOMPUTER=1
 
 # Which GPU architectures to support. More info at the following link:
 #      https://llvm.org/docs/AMDGPUUsage.html
-GFX_ARCHS="gfx908;gfx90a"
+GFX_ARCHS="gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=${MYSCRATCH}/rocm-build
+BUILD_FOLDER=${MYSCRATCH}/rocm-build-fixes
 
 BUILD_TYPE=Release
 
@@ -38,7 +38,7 @@ BUILD_TYPE=Release
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
 ROCM_VERSION=5.4.3
 # Pawsey build script revision
-SCRIPT_REVISION=0
+SCRIPT_REVISION=1
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
@@ -101,7 +101,7 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     module load gcc/12.1.0
     module load cray-python
-    COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
+    export COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
     COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
     
 elif [ "$OS_NAME" = "Ubuntu" ]; then

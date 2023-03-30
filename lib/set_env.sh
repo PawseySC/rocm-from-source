@@ -1,5 +1,5 @@
 # Needed by ROCm projects.
-export HIP_PATH="${ROCM_INSTALL_DIR}/hip"
+export HIP_PATH="${ROCM_INSTALL_DIR}"
 export HSA_PATH="${ROCM_INSTALL_DIR}/hsa"
 export HIP_CLANG_PATH="${ROCM_INSTALL_DIR}/llvm/bin"
 export ROCM_PATH="${ROCM_INSTALL_DIR}"
