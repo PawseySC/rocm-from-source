@@ -25,7 +25,7 @@ INSTALL_ON_SUPERCOMPUTER=1
 GFX_ARCHS="gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=${MYSCRATCH}/rocm-build-fixes
+BUILD_FOLDER=${MYSCRATCH}/rocm-build-gcc-nolibc
 
 BUILD_TYPE=Release
 
@@ -101,8 +101,8 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     module load gcc/12.1.0
     module load cray-python
-    export COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
-    COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
+    # export COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
+    # COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
     
 elif [ "$OS_NAME" = "Ubuntu" ]; then
 
