@@ -55,7 +55,7 @@ else
     BUILD_ROCM_DEPS=1
 fi
 # If set to 1, previous builds of each project, if any, are deleted before proceeding with a new build.
-CLEAN_BUILD=0
+CLEAN_BUILD=1
 # Do not call cmake/make on packages already installed (uses a sentinel file, `rfs_installed`, 
 # in the source folder).
 SKIP_INSTALLED=1
@@ -65,6 +65,7 @@ N_CPU_SOCKETS=`cat /proc/cpuinfo | grep "physical id"  | sort | uniq | wc -l`
 N_CORES_PER_SOCKET=`cat /proc/cpuinfo | grep "cpu cores" | head -n1 | grep -oE [0-9]+`
 # Number of cores to be used to build software. In general you should be using all the cores available.
 NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
+NCORES=16
 echo "Running the build with $NCORES cores.."  
 
 # ************************************************************************************************************
@@ -99,7 +100,7 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     # COMPILER_LIBDIR=
     #
-    module load gcc/12.1.0
+    module load gcc/12.2.0
     module load cray-python
     # export COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
     # COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)
