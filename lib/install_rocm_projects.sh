@@ -72,7 +72,7 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
    -DLLVM_ENABLE_RUNTIMES=""\
    -DCMAKE_CXX_COMPILER=CC\
    -DCMAKE_C_COMPILER=cc\
-   -DCMAKE_Fortran_COMPILER=ftn\
+   -DCMAKE_Fortran_COMPILER=ftn
 
 # The following is needed otherwise clang complains when executing hipcc
 [ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
@@ -83,7 +83,11 @@ export CC=clang
 export CXX_COMPILER="clang++"
 export C_COMPILER="clang"
 export FTN_COMPILER="ftn"
-export cmakecompilerargs="-DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_Fortran_COMPILER=${FTN_COMPILER}"
+export cmakecompilerargs="-DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
+	-DCMAKE_C_COMPILER=${C_COMPILER} \
+	-DCMAKE_Fortran_COMPILER=${FTN_COMPILER} \
+	-DCMAKE_CXX_FLAGS=-fuse-ld=lld"
+        #-DCMAKE_LINKER_FLAGS=-fuse-ld=lld\
 
 cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
        ${cmakecompilerargs} \
@@ -95,10 +99,12 @@ cmake_install aomp-extras -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFI
     -DAOMP_VERSION_STRING="${ROCM_VERSION}" 
 
 # the openmp module is compiled separately
+if [ ${ROCM_BUILD_OPENMP} -eq 1 ]
+then
 cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR}/include/hsa"\
     -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm\
-    ${cmakecomilerargs}\
+    ${cmakecompilerargs}\
     -DLIBOMPTARGET_AMDGCN_GFXLIST=${GFX_ARCHS}\
     -DDEVICELIBS_ROOT=${DEVICE_LIBS}\
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
@@ -108,7 +114,7 @@ cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_INSTALL_PREFIX=$ROCM_INSTALL_DIR/llvm\
     -DLLVM_MAIN_INCLUDE_DIR=$BUILD_FOLDER/llvm-project/llvm/include\
     -DLIBOMPTARGET_LLVM_INCLUDE_DIRS=$BUILD_FOLDER/llvm-project/llvm/include
-
+fi
 
 # Install AMD ROCm flang
 COMP_INC_DIR=${BUILD_FOLDER}/flang/runtime/libpgmath/lib/common
@@ -120,7 +126,6 @@ cmake_install flang/runtime/libpgmath\
        -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
        -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
        -DFLANG_INCLUDE_TESTS=OFF
-
 
 cmake_install flang -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
@@ -144,14 +149,25 @@ cmake_install flang -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="${ROC
     -DFLANG_INCLUDE_TESTS=OFF -DCMAKE_C_FLAGS=-I$COMP_INC_DIR -DCMAKE_CXX_FLAGS=-I$COMP_INC_DIR
 
 
+# install the rocm-cmake so that cmake can find stuff 
 cmake_install rocm-cmake
+# build the opencl 
 cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 
-cmake_install ROCm-CompilerSupport  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
-      ${cmakecompilerargs}
+# this is deprecated in new rocm
+# cmake_install ROCm-CompilerSupport  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
+#      ${cmakecompilerargs}
+
+# build the rocm smi libs 
 cmake_install rocm_smi_lib  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
       ${cmakecompilerargs}
+
+# now build rocinfo 
+# silly thing for rocminfo, doesn't like unused command line arguments 
+export cmakecompilerargs="-DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
+        -DCMAKE_C_COMPILER=${C_COMPILER} \
+        -DCMAKE_Fortran_COMPILER=${FTN_COMPILER}"
 cmake_install rocminfo  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
       ${cmakecompilerargs}
 
@@ -188,6 +204,8 @@ cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_H
 [ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake ] || \
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
 
+if [ ${ROCM_BUILD_ROCPROF} -eq 1 ]
+then
 # There seems to be a circular dependency between rocprofiler and roctracer. Roctracer needs rocprof headers,
 # but rocprof needs roctracer to build.
 run_command mkdir -p $BUILD_FOLDER/roctracer/inc/rocprofiler
@@ -231,6 +249,8 @@ else
     run_command make -j $NCORES install
     run_command touch ../rfs_installed
 fi
+
+fi # end of rocprof stuff 
 
 # rocm_bandwidth_test does not take into account env variables..
 if ! [ -e "${BUILD_FOLDER}/rocm_bandwidth_test/.patched" ]; then
