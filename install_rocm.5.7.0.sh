@@ -36,13 +36,17 @@ BUILD_TYPE=Release
 # ============================================================================================================
 
 # ROCm version. Users shouldn't change this because these scripts are tested only for the specified version.
-ROCM_VERSION=5.4.3
+ROCM_VERSION=5.7.0
 # Pawsey build script revision
 SCRIPT_REVISION=1
 
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
 export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
+export ROCM_BASE_COMPILER_TOOLSET=gcc
+export ROCM_BASE_COMPILER_CXX_NAME=g++
+export ROCM_BUILD_OPENMP=1
+export ROCM_BUILD_ROCPROF=1
 
 MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
@@ -65,7 +69,6 @@ N_CPU_SOCKETS=`cat /proc/cpuinfo | grep "physical id"  | sort | uniq | wc -l`
 N_CORES_PER_SOCKET=`cat /proc/cpuinfo | grep "cpu cores" | head -n1 | grep -oE [0-9]+`
 # Number of cores to be used to build software. In general you should be using all the cores available.
 NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
-NCORES=16
 echo "Running the build with $NCORES cores.."  
 
 # ************************************************************************************************************

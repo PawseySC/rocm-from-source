@@ -6,7 +6,7 @@ INSTALL_DIR="${ROCM_INSTALL_DIR}"
 export PYTHONPATH=${ROCM_INSTALL_DIR}/lib64/python${PYTHON_VERSION}/site-packages:$PYTHONPATH  
 export CPATH="${ROCM_INSTALL_DIR}/rocclr/include/elf:${ROCM_INSTALL_DIR}/include/hsa:$CPATH"
 echo $PYTHONPATH
-ROCM_BUILD_FOLDER="${BUILD_FOLDER}/rocm"
+ROCM_BUILD_FOLDER="${BUILD_FOLDER}/rocm-${ROCM_VERSION}-${ROCM_BASE_COMPILER_TOOLSET}"
 [ -e "${ROCM_BUILD_FOLDER}" ] || mkdir - "${ROCM_BUILD_FOLDER}"
 
 OLD_BUILD_FOLDER="${BUILD_FOLDER}"
@@ -58,6 +58,10 @@ cmake_install ROCT-Thunk-Interface
 DEVICE_LIBS="${BUILD_FOLDER}/ROCm-Device-Libs"
 BITCODE_DIR="${ROCM_INSTALL_DIR}/llvm/amdgcn/bitcode"
 
+export CXX_COMPILER="CC"
+export C_COMPILER="cc"
+export FTN_COMPILER="ftn"
+
 cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
    -DLLVM_ENABLE_PROJECTS="llvm;clang;clang-tools-extra;lld;compiler-rt;" \
    -DCMAKE_PREFIX_PATH=${ROCM_INSTALL_DIR}\
@@ -65,26 +69,42 @@ cmake_install llvm-project -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
    -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
    -DLLVM_EXTERNAL_DEVICE_LIBS_SOURCE_DIR="$DEVICE_LIBS"\
    -DLLVM_EXTERNAL_PROJECTS=device-libs\
-   -DLLVM_ENABLE_RUNTIMES=""
+   -DLLVM_ENABLE_RUNTIMES=""\
+   -DCMAKE_CXX_COMPILER=CC\
+   -DCMAKE_C_COMPILER=cc\
+   -DCMAKE_Fortran_COMPILER=ftn
 
 # The following is needed otherwise clang complains when executing hipcc
 [ -e  "${ROCM_INSTALL_DIR}/amdgcn" ] || \
-   run_command ln -s "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
+   run_command ln -fs "${ROCM_INSTALL_DIR}/llvm/amdgcn" "${ROCM_INSTALL_DIR}/amdgcn"
 
 export CXX=clang++
 export CC=clang
+export CXX_COMPILER="clang++"
+export C_COMPILER="clang"
+export FTN_COMPILER="ftn"
+export cmakecompilerargs="-DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
+	-DCMAKE_C_COMPILER=${C_COMPILER} \
+	-DCMAKE_Fortran_COMPILER=${FTN_COMPILER} \
+	-DCMAKE_CXX_FLAGS=-fuse-ld=lld"
+        #-DCMAKE_LINKER_FLAGS=-fuse-ld=lld\
 
-cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++  -DBITCODE_DIR="$BITCODE_DIR"
+cmake_install ROCR-Runtime -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+       ${cmakecompilerargs} \
+       -DBITCODE_DIR="$BITCODE_DIR"
 
 cmake_install aomp-extras -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=clang++ -DROCM_DIR=${ROCM_INSTALL_DIR} -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm -DCMAKE_C_COMPILER=clang -DAOMP_VERSION_STRING="${ROCM_VERSION}" 
+    ${cmakecompilerargs} \
+    -DROCM_DIR=${ROCM_INSTALL_DIR} -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm \
+    -DAOMP_VERSION_STRING="${ROCM_VERSION}" 
 
 # the openmp module is compiled separately
+if [ ${ROCM_BUILD_OPENMP} -eq 1 ]
+then
 cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR}/include/hsa"\
     -DLLVM_DIR=${ROCM_INSTALL_DIR}/llvm\
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++\
-    -DOPENMP_TEST_C_COMPILER=clang -DOPENMP_TEST_CXX_COMPILER=clang++\
+    ${cmakecompilerargs}\
     -DLIBOMPTARGET_AMDGCN_GFXLIST=${GFX_ARCHS}\
     -DDEVICELIBS_ROOT=${DEVICE_LIBS}\
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
@@ -94,25 +114,22 @@ cmake_install llvm-project/openmp -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_INSTALL_PREFIX=$ROCM_INSTALL_DIR/llvm\
     -DLLVM_MAIN_INCLUDE_DIR=$BUILD_FOLDER/llvm-project/llvm/include\
     -DLIBOMPTARGET_LLVM_INCLUDE_DIRS=$BUILD_FOLDER/llvm-project/llvm/include
-
+fi
 
 # Install AMD ROCm flang
 COMP_INC_DIR=${BUILD_FOLDER}/flang/runtime/libpgmath/lib/common
 export CPATH="$COMP_INC_DIR:$CPATH"
 cmake_install flang/runtime/libpgmath\
        -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
-       -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang \
-       -DCMAKE_Fortran_COMPILER=gfortran \
+       ${cmakecompilerargs}\
        -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
        -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
        -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
        -DFLANG_INCLUDE_TESTS=OFF
 
-
 cmake_install flang -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
-    -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_Fortran_COMPILER=gfortran \
+    ${cmakecompilerargs}\
     -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
     -DFLANG_OPENMP_GPU_AMD=ON\
@@ -123,7 +140,8 @@ cmake_install flang -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE="${BUILD_TYPE
 
 # flang runtime
 cmake_install flang -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}/llvm"\
-    -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_CXX_COMPILER=clang++ \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
     -DLLVM_CONFIG="${ROCM_INSTALL_DIR}/llvm/bin/llvm-config" \
     -DCMAKE_C_COMPILER=clang -DCMAKE_Fortran_COMPILER=flang\
     -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86"\
@@ -131,13 +149,27 @@ cmake_install flang -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="${ROC
     -DFLANG_INCLUDE_TESTS=OFF -DCMAKE_C_FLAGS=-I$COMP_INC_DIR -DCMAKE_CXX_FLAGS=-I$COMP_INC_DIR
 
 
+# install the rocm-cmake so that cmake can find stuff 
 cmake_install rocm-cmake
+# build the opencl 
 cmake_install clang-ocl -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DROCM_DIR="${ROCM_INSTALL_DIR}" \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"
 
-cmake_install ROCm-CompilerSupport  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
-cmake_install rocm_smi_lib  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
-cmake_install rocminfo  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+# this is deprecated in new rocm
+# cmake_install ROCm-CompilerSupport  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"\
+#      ${cmakecompilerargs}
+
+# build the rocm smi libs 
+cmake_install rocm_smi_lib  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+      ${cmakecompilerargs}
+
+# now build rocinfo 
+# silly thing for rocminfo, doesn't like unused command line arguments 
+export cmakecompilerargs="-DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
+        -DCMAKE_C_COMPILER=${C_COMPILER} \
+        -DCMAKE_Fortran_COMPILER=${FTN_COMPILER}"
+cmake_install rocminfo  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+      ${cmakecompilerargs}
 
 # install opencl runtime
 ROCM_OPENCL_RUNTIME_SRC="${BUILD_FOLDER}/ROCm-OpenCL-Runtime"
@@ -159,7 +191,8 @@ run_command chmod 0755 rocm_agent_enumerator
 COMMON_HIP="${BUILD_FOLDER}/HIP"
 ROCCLR_DIR="${BUILD_FOLDER}/ROCclr"
 
-cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++  \
+cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_HIP \
+    ${cmakecompilerargs} \
     -DCMAKE_PREFIX_PATH="${BUILD_FOLDER}/rocclr;${ROCM_INSTALL_DIR}" -DROCM_PATH=${ROCM_INSTALL_DIR} \
     -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DHSA_PATH=${ROCM_INSTALL_DIR}/hsa \
     -DROCCLR_PATH=${ROCCLR_DIR} -DAMD_OPENCL_PATH=$ROCM_OPENCL_RUNTIME_SRC \
@@ -171,20 +204,32 @@ cmake_install hipamd -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHIP_COMMON_DIR=$COMMON_H
 [ -e $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake ] || \
     run_command ln -s $ROCM_INSTALL_DIR/lib/cmake/hip/hip-targets-release.cmake $ROCM_INSTALL_DIR/hip/lib/cmake/hip/hip-targets-release.cmake
 
+if [ ${ROCM_BUILD_ROCPROF} -eq 1 ]
+then
 # There seems to be a circular dependency between rocprofiler and roctracer. Roctracer needs rocprof headers,
 # but rocprof needs roctracer to build.
 run_command mkdir -p $BUILD_FOLDER/roctracer/inc/rocprofiler
 run_command cp ${BUILD_FOLDER}/rocprofiler/src/core/*.h ${BUILD_FOLDER}/roctracer/inc/rocprofiler
 run_command cp ${BUILD_FOLDER}/rocprofiler/inc/* ${BUILD_FOLDER}/roctracer/inc/rocprofiler
 
-cmake_install roctracer -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/lib64/cmake/hip -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" 
-cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
-cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-cmake_install ROCdbgapi -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
+cmake_install roctracer -DCMAKE_MODULE_PATH=$ROCM_INSTALL_DIR/lib64/cmake/hip -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+	${cmakecompilerargs} \
+	-DHIP_VDI=1 -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" 
+cmake_install rocprofiler -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+	${cmakecompilerargs} \
+        -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/roctracer"
+cmake_install HIPIFY -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR}/hipify \
+	${cmakecompilerargs} 
+cmake_install ROCdbgapi -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+       	${cmakecompilerargs} 
+cmake_install rocr_debug_agent -DCMAKE_MODULE_PATH=${ROCM_INSTALL_DIR}/hip/cmake \
+	-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+	-DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+	${cmakecompilerargs} \
+	-DCMAKE_PREFIX_PATH=${ROCM_DEPS_INSTALL_DIR} -DCMAKE_HIP_ARCHITECTURES="$GFX_ARCHS"
 
 # ROCgdb is a bit different
+# it has an older more brittle build that might need to use gdb as a basis and use gcc/g++
 run_command cd "${BUILD_FOLDER}/ROCgdb"
 if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
   	echo "Boost already installed. Skipping.."
@@ -205,15 +250,19 @@ else
     run_command touch ../rfs_installed
 fi
 
+fi # end of rocprof stuff 
+
 # rocm_bandwidth_test does not take into account env variables..
 if ! [ -e "${BUILD_FOLDER}/rocm_bandwidth_test/.patched" ]; then
     CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
     sed -i "82 a${CMAKE_LINE}" ${BUILD_FOLDER}/rocm_bandwidth_test/CMakeLists.txt
     touch "${BUILD_FOLDER}/rocm_bandwidth_test/.patched" 
 fi
-cmake_install rocm_bandwidth_test -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+cmake_install rocm_bandwidth_test -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+       ${cmakecompilerargs}
 
-cmake_install half  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}"  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+cmake_install half  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${ROCM_INSTALL_DIR}" \
+       ${cmakecompilerargs}
 
 if ! [ -e "${BUILD_FOLDER}/rocBLAS/.patched" ]; then
     CMAKE_LINE="set(CMAKE_EXE_LINKER_FLAGS \" ${LDFLAGS} \${CMAKE_EXE_LINKER_FLAGS}\")"
@@ -222,14 +271,20 @@ if ! [ -e "${BUILD_FOLDER}/rocBLAS/.patched" ]; then
 fi
 
 export PYTHONPATH=${BUILD_FOLDER}/rocBLAS/build/virtualenv/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
+
+# now building stuff that will use hipcc as the cxx compiler
+# Build the rocs
+echo "Building rocm libraries (BLAS, Solver, FFT, etc)"
+
 cmake_install rocBLAS -DCMAKE_PREFIX_PATH="${ROCM_INSTALL_DIR}/llvm;${ROCM_INSTALL_DIR};" \
-     -DRUN_HEADER_TESTING=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_COMPILER=hipcc\
+     -DRUN_HEADER_TESTING=OFF -DBUILD_TESTING=OFF \
+     -DCMAKE_CXX_COMPILER=hipcc\
      -DTensile_CODE_OBJECT_VERSION=V3 -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS="$GFX_ARCHS" \
      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_FILE_REORG_BACKWARD_COMPATIBILITY=ON -DTensile_TEST_LOCAL_PATH=${BUILD_FOLDER}/Tensile  -DCMAKE_TOOLCHAIN_FILE=../toolchain-linux.cmake
 
+# now make the rocs and then the hips for each of these as they are separate packages
 cmake_install rocRAND -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DAMDGPU_TARGETS=$GFX_ARCHS -DCMAKE_CXX_COMPILER=hipcc -DBUILD_HIPRAND=OFF
-
 
 cmake_install rocSOLVER -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS
@@ -238,47 +293,79 @@ cmake_install rocPRIM -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${
     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS
 
 cmake_install rocSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc  -DCMAKE_FC_COMPILER=gfortran -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF
-
+    -DCMAKE_CXX_COMPILER=hipcc  -DCMAKE_FC_COMPILER=${FTN_COMPILER} \
+    -DAMDGPU_TARGETS=${GFX_ARCHS} \
+    -DBUILD_CLIENTS_SAMPLES=OFF
 
 cmake_install rocALUTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS -DBUILD_CLIENTS_SAMPLES=OFF \
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS=${GFX_ARCHS} \
+    -DBUILD_CLIENTS_SAMPLES=OFF \
     -DCMAKE_MODULE_PATH="${ROCM_INSTALL_DIR}/hip/cmake;${ROCM_INSTALL_DIR}" #  remove this last option
 
+cmake_install rocFFT -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="$GFX_ARCHS"
+
+cmake_install rocWMMA -DROCWMMA_BUILD_TESTS=OFF -DROCWMMA_BUILD_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
+    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGETS=${GFX_ARCHS} \
+    ${cmakecompilerargs}
+
+echo "Done rocm libraries"
+# Finished the rocs
+
+# Build the hips
+echo "Building hip API to libraries (BLAS, Solver, FFT, etc)"
+
+cmake_install hipRAND -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="${GFX_ARCHS}"
 
 cmake_install hipBLAS -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="${GFX_ARCHS}"
 
 cmake_install hipSOLVER -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="${GFX_ARCHS}"
 
 cmake_install hipSPARSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_CLIENTS_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DHIP_PATH=${HIP_PATH} -DROCM_PATH=${ROCM_INSTALL_DIR} -DAMDGPU_TARGETS="$GFX_ARCHS"
+    -DHIP_PATH=${HIP_PATH} -DROCM_PATH=${ROCM_INSTALL_DIR} \
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="$GFX_ARCHS"
 
 cmake_install hipCUB -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
-
-cmake_install rocFFT -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="$GFX_ARCHS"
 
 cmake_install hipFFT -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS=$GFX_ARCHS \
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS=$GFX_ARCHS \
     -DCMAKE_MODULE_PATH="${ROCM_INSTALL_DIR}/hip/cmake;${ROCM_INSTALL_DIR}"
 
+echo "Finished hip API to libraries"
+# Finished the hips
+
+# build thrust API
 cmake_install rocThrust -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-    -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+    -DCMAKE_CXX_COMPILER=hipcc \
+    -DAMDGPU_TARGETS="$GFX_ARCHS"
 
-cmake_install hipfort -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc  -DHIPFORT_COMPILER=gfortran -DHIPFORT_AR=ar
+# now try the fortran 
+cmake_install hipfort -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
+	-DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_C_COMPILER=${C_COMPILER}  -DHIPFORT_COMPILER=${FTN_COMPILER} \
+	-DHIPFORT_AR=ar
 
+# now try the mpi
 cmake_install rccl -DCMAKE_EXE_LINKER_FLAGS="'$LDFLAGS'" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} \
-     -DCMAKE_CXX_COMPILER=hipcc -DAMDGPU_TARGETS="$GFX_ARCHS"
+     -DCMAKE_CXX_COMPILER=hipcc \
+     -DAMDGPU_TARGETS="$GFX_ARCHS"
 
 cmake_install atmi -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DLLVM_DIR="${ROCM_INSTALL_DIR}/llvm" -DDEVICE_LIB_DIR=${DEVICE_LIBS} -DATMI_DEVICE_RUNTIME=ON \
-    -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ 
+    -DATMI_HSA_INTEROP=ON -DROCM_DIR="${ROCM_INSTALL_DIR}/hsa" \
+    ${cmakecompilerargs} 
 
-cmake_install rocWMMA -DROCWMMA_BUILD_TESTS=OFF -DROCWMMA_BUILD_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${ROCM_INSTALL_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
-    -DROCWMMA_BUILD_VALIDATION_TESTS=OFF -DCMAKE_CXX_COMPILER=clang++ -DROCWMMA_VALIDATE_WITH_ROCBLAS=OFF -DAMDGPU_TARGETS=${GFX_ARCHS}
 
 # FIXTHIS WARNING: #pragma message: cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
 # cmake_install MIOpenGEMM

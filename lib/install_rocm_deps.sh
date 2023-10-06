@@ -17,7 +17,7 @@ cd "${ROCM_DEPS_BUILD_FOLDER}"
 #                                       libX11
 # ===============================================================================================
 export PYTHONPATH=${INSTALL_DIR}/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
-
+export_vars ${ROCM_DEPS_INSTALL_FOLDER}
 configure_build https://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz
 autoreconf_build https://www.x.org/archive//individual/util/util-macros-1.19.3.tar.gz
 configure_build https://xcb.freedesktop.org/dist/libpthread-stubs-0.1.tar.gz
@@ -25,10 +25,21 @@ autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/archive/xtr
 autoreconf_build https://www.x.org/archive/individual/proto/xproto-7.0.31.tar.gz
 autoreconf_build https://gitlab.freedesktop.org/xorg/proto/xextproto/-/archive/xextproto-7.3.0/xextproto-xextproto-7.3.0.tar.gz
 autoreconf_build https://gitlab.freedesktop.org/xorg/proto/xcbproto/-/archive/xcb-proto-1.15/xcbproto-xcb-proto-1.15.tar.gz
-autoreconf_build https://www.x.org/releases/individual/lib/libXau-1.0.6.tar.gz
+
+# issues installing libXau 1.0.6, tried just configure install of 1.0.11 and that worked
+#autoreconf_build https://www.x.org/releases/individual/lib/libXau-1.0.6.tar.gz
+#autoreconf_build https://www.x.org/releases/individual/lib/libXau-1.0.11.tar.gz
+configure_build https://www.x.org/releases/individual/lib/libXau-1.0.11.tar.gz
+
 autoreconf_build https://gitlab.freedesktop.org/xorg/proto/inputproto/-/archive/inputproto-2.3.2/inputproto-inputproto-2.3.2.tar.gz
-autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/libxcb-1.14/libxcb-libxcb-1.14.tar.gz
+
+# issues installing libxcb but is already installed so why install it? Is slightly older version. 
+# installation is complaining about macros but xorg macros 1.19 are installed here locally. What is missing?
+#autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/libxcb-1.14/libxcb-libxcb-1.14.tar.gz
+# configure_build https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/libxcb-1.14/libxcb-libxcb-1.14.tar.gz
+
 autoreconf_build https://gitlab.freedesktop.org/xorg/lib/libpciaccess/-/archive/libpciaccess-0.16/libpciaccess-libpciaccess-0.16.tar.gz
+
 [ -e kbproto ] || run_command git clone https://gitlab.freedesktop.org/xorg/proto/kbproto
 run_command cd kbproto
 if [ -e rfs_installed ] &&  [ ${SKIP_INSTALLED} -eq 1 ]; then
@@ -122,10 +133,21 @@ else
     # the following is needed due to a bug in boost 1.72 installation process
     OLD_CPLUS_VAR=$CPLUS_INCLUDE_PATH
     export CPLUS_INCLUDE_PATH=""
-    ( unset CPLUS_INCLUDE_PATH; ./bootstrap.sh --prefix="${INSTALL_DIR}" )
+    # this is a hacky way of making sure you use the correct compiler when building boost
+    # what it will do is momentarily add an appropriate compiler to the path so boost's silly configure script is happy
+    mkdir -p foobin
+    OLD_PATH=$PATH
+    export PATH=$(pwd)/foobin/:$PATH
+    echo '#!/bin/bash' > $(pwd)/foobin/${ROCM_BASE_COMPILER_CXX_NAME}
+    echo 'CC "$@"' >> $(pwd)/foobin/${ROCM_BASE_COMPILER_CXX_NAME}
+    ( unset CPLUS_INCLUDE_PATH; ./bootstrap.sh --prefix="${INSTALL_DIR}" --with-toolset=${ROCM_BASE_COMPILER_TOOLSET})
     export CPLUS_INCLUDE_PATH=$OLD_CPLUS_VAR
     run_command ./b2 headers
-    run_command ./b2 -j$NCORES cxxflags=-fPIC cflags=-fPIC install toolset=gcc --with=all --prefix="${INSTALL_DIR}"
+    # why is the toolset hardcoded ???!!! 
+    run_command ./b2 -j$NCORES cxxflags=-fPIC cflags=-fPIC install --with=all --prefix="${INSTALL_DIR}"
+    # run_command ./b2 -j$NCORES cxxflags=-fPIC cflags=-fPIC install toolset=gcc --with=all --prefix="${INSTALL_DIR}"
+    export PATH=${OLDPATH}
+    rm -rf foobin/
     run_command touch "${BOOST_ROOT_DIR}/rfs_installed"
 fi
 # -----------------------------------------------------------------------------------------------------

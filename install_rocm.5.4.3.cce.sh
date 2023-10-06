@@ -25,7 +25,7 @@ INSTALL_ON_SUPERCOMPUTER=1
 GFX_ARCHS="gfx90a"
 
 # Where build files are written.
-BUILD_FOLDER=${MYSCRATCH}/rocm-build-gcc-nolibc
+BUILD_FOLDER=${MYSCRATCH}/rocm-build-cce-nolibc
 
 BUILD_TYPE=Release
 
@@ -43,6 +43,10 @@ SCRIPT_REVISION=1
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
 export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
+export ROCM_BASE_COMPILER_TOOLSET=clang
+export ROCM_BASE_COMPILER_CXX_NAME=clang++
+export ROCM_BUILD_OPENMP=0
+export ROCM_BUILD_ROCPROF=0
 
 MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
@@ -58,14 +62,14 @@ fi
 CLEAN_BUILD=1
 # Do not call cmake/make on packages already installed (uses a sentinel file, `rfs_installed`, 
 # in the source folder).
-SKIP_INSTALLED=1
+SKIP_INSTALLED=0
+
 
 
 N_CPU_SOCKETS=`cat /proc/cpuinfo | grep "physical id"  | sort | uniq | wc -l`
 N_CORES_PER_SOCKET=`cat /proc/cpuinfo | grep "cpu cores" | head -n1 | grep -oE [0-9]+`
 # Number of cores to be used to build software. In general you should be using all the cores available.
 NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
-NCORES=16
 echo "Running the build with $NCORES cores.."  
 
 # ************************************************************************************************************
@@ -100,7 +104,7 @@ if [ $INSTALL_ON_SUPERCOMPUTER -eq 1 ]; then
     #
     # COMPILER_LIBDIR=
     #
-    module load gcc/12.2.0
+    module load cce/15.0.1
     module load cray-python
     # export COMPILER_LIBDIR=$( cd $(dirname `which gcc`)/../snos/lib64 && pwd)
     # COMPILER_BINDIR=$( cd $(dirname `which gcc`)/../snos/bin && pwd)

@@ -120,7 +120,7 @@ autoreconf_build () {
      if [ -e rfs_installed ] && [ ${SKIP_INSTALLED} -eq 1 ]; then
   	    echo "Package already installed. Skipping.."
     else
-        run_command aclocal
+        # run_command aclocal
         run_command autoreconf -if
         run_command ./configure --prefix="${INSTALL_DIR}"
         run_command make -j $NCORES install
