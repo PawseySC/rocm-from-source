@@ -59,7 +59,7 @@ else
     BUILD_ROCM_DEPS=1
 fi
 # If set to 1, previous builds of each project, if any, are deleted before proceeding with a new build.
-CLEAN_BUILD=1
+CLEAN_BUILD=0
 # Do not call cmake/make on packages already installed (uses a sentinel file, `rfs_installed`, 
 # in the source folder).
 SKIP_INSTALLED=1

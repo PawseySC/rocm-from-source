@@ -3,9 +3,9 @@
 #SBATCH --cpus-per-task=128
 #SBATCH --mem=0
 #SBATCH --time=2:00:00 
-#SBATCH --job=rocm_install_5.7.0-gcc
+#SBATCH --job=rocm_install_5.4.3-gcc
 
-export ROCM_VERSION="5.7.0"
+export ROCM_VERSION="5.4.3"
 export ROOT_INSTALL_DIR=/software/setonix/2023.08/pawsey/software/rocm/gcc/12.2.0/
 module load cmake/3.24.3 
 module load autoconf/2.69
