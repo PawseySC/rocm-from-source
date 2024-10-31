@@ -1,4 +1,6 @@
-# ROCm from source
+# ROCm from source (ARCHIVED)
+
+**NOTICE: This repository is now archived and no longer maintained.**
 
 A set of `sh` scripts whose objective is to install the AMD ROCm programming framework from source, brought to you by the Pawsey Supercomputing Research Centre.
 
