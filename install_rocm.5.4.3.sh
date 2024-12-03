@@ -43,6 +43,10 @@ SCRIPT_REVISION=1
 # Modify the following only if necessary.
 export ROCM_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-${ROCM_VERSION}rev${SCRIPT_REVISION}"
 export ROCM_DEPS_INSTALL_DIR="${ROOT_INSTALL_DIR}/rocm-deps"
+export ROCM_BASE_COMPILER_TOOLSET=gcc
+export ROCM_BASE_COMPILER_CXX_NAME=g++
+export ROCM_BUILD_OPENMP=0
+export ROCM_BUILD_ROCPROF=1
 
 MODULEFILE_DIR="${ROOT_INSTALL_DIR}/modulefiles/rocm"
 MODULEFILE_PATH="${MODULEFILE_DIR}/${ROCM_VERSION}.lua"
@@ -55,7 +59,7 @@ else
     BUILD_ROCM_DEPS=1
 fi
 # If set to 1, previous builds of each project, if any, are deleted before proceeding with a new build.
-CLEAN_BUILD=1
+CLEAN_BUILD=0
 # Do not call cmake/make on packages already installed (uses a sentinel file, `rfs_installed`, 
 # in the source folder).
 SKIP_INSTALLED=1
@@ -65,7 +69,6 @@ N_CPU_SOCKETS=`cat /proc/cpuinfo | grep "physical id"  | sort | uniq | wc -l`
 N_CORES_PER_SOCKET=`cat /proc/cpuinfo | grep "cpu cores" | head -n1 | grep -oE [0-9]+`
 # Number of cores to be used to build software. In general you should be using all the cores available.
 NCORES=$(( N_CPU_SOCKETS * N_CORES_PER_SOCKET ))
-NCORES=16
 echo "Running the build with $NCORES cores.."  
 
 # ************************************************************************************************************
